@@ -84,6 +84,18 @@ Each metadata file contains:
 - generated description
 - embedding text
 
+Metadata generation is now automated through:
+
+- `utilities/generate_dataset_metadata.py`
+
+Current behavior:
+
+- reads the shared manifest
+- generates metadata JSON from local CSV files
+- skips already existing metadata by default
+- supports `--force` to rebuild
+- supports `--dataset` to target selected datasets
+
 ### 5. Manifest cleanup
 
 The manifest was normalized to represent the three active datasets only.
