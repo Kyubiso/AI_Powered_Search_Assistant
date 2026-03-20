@@ -1,0 +1,32 @@
+{
+  "dataset_name": "Drug-Drug Interactions Dataset",
+  "source": "https://www.kaggle.com/datasets/mghobashy/drug-drug-interactions?select=db_drug_interactions.csv",
+  "file_path": "data/db_drug_interactions.csv",
+  "num_rows": 191541,
+  "num_columns": 3,
+  "columns": [
+    "Drug 1",
+    "Drug 2",
+    "Interaction Description"
+  ],
+  "sample_rows": [
+    {
+      "Drug 1": "Trioxsalen",
+      "Drug 2": "Verteporfin",
+      "Interaction Description": "Trioxsalen may increase the photosensitizing activities of Verteporfin."
+    },
+    {
+      "Drug 1": "Aminolevulinic acid",
+      "Drug 2": "Verteporfin",
+      "Interaction Description": "Aminolevulinic acid may increase the photosensitizing activities of Verteporfin."
+    },
+    {
+      "Drug 1": "Titanium dioxide",
+      "Drug 2": "Verteporfin",
+      "Interaction Description": "Titanium dioxide may increase the photosensitizing activities of Verteporfin."
+    }
+  ],
+  "domain": "healthcare, pharmacology, drug-drug interaction analysis",
+  "description": "A pharmacology dataset of pairwise drug-drug interactions where each record describes two drugs and a natural-language summary of their interaction. The dataset is suitable for retrieval, relationship extraction, pharmacovigilance analysis, and question answering over medication compatibility and interaction effects. It contains 191,541 rows and three core columns representing the interacting drug pair and the corresponding interaction description.",
+  "embedding_text": "Dataset: Drug-Drug Interactions Dataset. Source: Kaggle drug-drug interactions dataset derived from DrugBank. Domain: healthcare, pharmacology, medication safety, drug-drug interaction analysis. Rows: 191541. Columns: 3. Structure: each row contains Drug 1, Drug 2, and an Interaction Description in natural language. Content: pairwise medication interaction records describing how one drug may affect another, including changes in activity, toxicity, metabolism, or safety profile. Use cases: drug interaction retrieval, medication safety search, pharmacology question answering, biomedical NLP, and RAG-based lookup of known drug-drug interactions."
+}
