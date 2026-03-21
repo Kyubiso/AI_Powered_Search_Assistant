@@ -145,3 +145,26 @@ If later work needs a safe rollback point, this baseline means:
 - the shared manifest exists and is populated
 - the Kaggle download utility exists
 - no ingestion pipeline has yet been fully automated beyond metadata preparation
+
+## Next Prepared Step
+
+The next project layer has been scaffolded but not executed end-to-end yet:
+
+- `utilities/generate_embeddings.py`
+- `utilities/search_datasets.py`
+
+Target stack:
+
+- OpenAI `text-embedding-3-small` by default
+- ChromaDB persistent local vector store
+
+Execution still depends on:
+
+- installing `openai` and `chromadb`
+- setting `OPENAI_API_KEY`
+
+## Superseded By
+
+This baseline has now been extended by:
+
+- `docs/phases/phase_02_embeddings_and_search.md`

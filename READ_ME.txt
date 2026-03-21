@@ -1,1 +1,0 @@
-You have to download datasets from links in Manifests to /data directory
