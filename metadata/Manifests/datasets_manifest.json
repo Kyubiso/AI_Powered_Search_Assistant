@@ -1,0 +1,29 @@
+[
+  {
+    "file_path": "data/Final_Augmented_dataset_Diseases_and_Symptoms.csv",
+    "metadata_path": "metadata/datasets/Final_Augmented_dataset_Diseases_and_Symptoms.json",
+    "dataset_name": "Diseases and Symptoms Dataset",
+    "source": "https://www.kaggle.com/datasets/dhivyeshrk/diseases-and-symptoms-dataset",
+    "created_at": "2026-03-20",
+    "domain": "healthcare, symptom-based disease classification and clinical decision support",
+    "description": "The dataset contains disease names along with the symptoms faced by the respective patient. There are a total of 773 unique diseases and 377 symptoms, with ~246,000 rows. The dataset was artificially generated, preserving Symptom Severity and Disease Occurrence Possibility."
+  },
+  {
+    "file_path": "data/db_drug_interactions.csv",
+    "metadata_path": "metadata/datasets/db_drug_interactions.json",
+    "dataset_name": "Drug-Drug Interactions Dataset",
+    "source": "https://www.kaggle.com/datasets/mghobashy/drug-drug-interactions?select=db_drug_interactions.csv",
+    "created_at": "2026-03-20",
+    "domain": "healthcare, pharmacology, drug-drug interaction analysis",
+    "description": "This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs."
+  },
+  {
+    "file_path": "data/realistic_drug_labels_side_effects.csv",
+    "metadata_path": "metadata/datasets/realistic_drug_labels_side_effects.json",
+    "dataset_name": "Drug Labels and Side Effects Dataset",
+    "source": "https://www.kaggle.com/datasets/pratyushpuri/drug-labels-and-side-effects-dataset-1400-records",
+    "created_at": "2026-03-20",
+    "domain": "healthcare, pharmaceutical safety, drug label and adverse effect analysis",
+    "description": "This comprehensive pharmaceutical synthetic dataset contains 1,393 records of synthetic drug information with 15 columns, designed for data science projects focusing on healthcare analytics, drug safety analysis, and pharmaceutical research. The dataset simulates real-world pharmaceutical data with appropriate variety and realistic constraints for machine learning applications."
+  }
+]
