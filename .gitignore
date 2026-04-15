@@ -1,9 +1,15 @@
 *.csv
 __pycache__/
 *.pyc
+
+# Local vector database artifacts
 chroma_db/
+chroma_db/*.sqlite3
+
+# Local SQL database artifacts
 storage/
 *.duckdb
+
 .venv/
 venv/
 .idea/
