@@ -214,6 +214,24 @@ What happens:
 - the query is executed against local DuckDB
 - rows are returned directly in the terminal
 
+### 13. Run the full pipeline
+
+Commands:
+
+```bash
+python utilities/ask_database.py "How many respondents received treatment?"
+python utilities/ask_database.py "Which diseases have fever and cough?"
+```
+
+What happens:
+
+- semantic retrieval selects the best dataset candidate
+- SQL context is prepared for the selected DuckDB table
+- OpenAI generates one candidate read-only SQL query
+- validation checks the query
+- the query is executed only if validation passes
+- the full pipeline result is returned as JSON
+
 ## How to think about it
 
 You do not generate embeddings every time you search.
@@ -307,10 +325,18 @@ Run validated SQL:
 python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
 ```
 
+Run full pipeline:
+
+```bash
+python utilities/ask_database.py "How many respondents received treatment?"
+```
+
 ## Current limitation
 
-The current search still returns ranked dataset matches as JSON, and retrieval is not yet automatically connected to SQL generation, validation, and execution in one command.
+The current system now supports retrieval-to-SQL execution in one command, but it still only allows single-table queries and does not support joins.
 
 The next future step could be:
 
-- an end-to-end flow from retrieval to SQL answer generation
+- better answer formatting
+- confidence handling or fallback across top retrieved datasets
+- controlled join support with explicit allowed relationships

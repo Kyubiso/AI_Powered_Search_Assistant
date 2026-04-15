@@ -51,6 +51,12 @@ AGGREGATE_HINTS = (
     "number of",
     "average",
     "avg",
+    "probability",
+    "probabilities",
+    "prevalence",
+    "rate",
+    "rates",
+    "distribution",
     "minimum",
     "maximum",
     "sum",
@@ -172,9 +178,9 @@ def score_column(
 
     for token in question_tokens:
         if token in column_tokens:
-            score += 10.0 / token_frequency.get(token, 1)
+            score += 25.0 / token_frequency.get(token, 1)
         elif any(token in column_token or column_token in token for column_token in column_tokens):
-            score += 2.0 / token_frequency.get(token, 1)
+            score += 1.0 / token_frequency.get(token, 1)
 
     return score
 
@@ -201,11 +207,16 @@ def rank_schema_columns(schema: list[dict], question: str, top_columns: int) -> 
 
 def classify_query_mode(question: str) -> str:
     lowered = question.strip().lower()
+    has_broad_signal = any(hint in lowered for hint in BROAD_PROFILE_HINTS)
+    has_aggregate_signal = any(hint in lowered for hint in AGGREGATE_HINTS)
 
-    if any(hint in lowered for hint in BROAD_PROFILE_HINTS):
+    if has_broad_signal and has_aggregate_signal:
+        return "broad_aggregate"
+
+    if has_broad_signal:
         return "broad_profile"
 
-    if any(hint in lowered for hint in AGGREGATE_HINTS):
+    if has_aggregate_signal:
         return "aggregate"
 
     return "focused_filter"
@@ -246,7 +257,7 @@ def select_columns_for_query_mode(
 ) -> list[dict]:
     identifier_columns = select_identifier_columns(schema)
 
-    if query_mode == "broad_profile":
+    if query_mode in {"broad_profile", "broad_aggregate"}:
         return merge_columns(identifier_columns, schema)
 
     ranked_columns = rank_schema_columns(schema, question, top_columns)

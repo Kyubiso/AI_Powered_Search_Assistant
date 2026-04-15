@@ -83,7 +83,6 @@ def load_sql_input(
 
 def strip_quoted_content(sql: str) -> str:
     sql = re.sub(r"'(?:''|[^'])*'", "''", sql)
-    sql = re.sub(r'"(?:""|[^"])*"', '""', sql)
     return sql
 
 
@@ -116,8 +115,15 @@ def extract_from_clause(sql: str) -> str:
 
 
 def extract_from_tables(sql: str) -> list[str]:
-    pattern = re.compile(r"\bfrom\s+([a-zA-Z_][a-zA-Z0-9_]*)", flags=re.IGNORECASE)
-    return pattern.findall(sql)
+    pattern = re.compile(
+        r'\bfrom\s+(?:"([^"]+)"|([a-zA-Z_][a-zA-Z0-9_]*))',
+        flags=re.IGNORECASE,
+    )
+    matches = pattern.findall(sql)
+    tables = []
+    for quoted_name, unquoted_name in matches:
+        tables.append(quoted_name or unquoted_name)
+    return tables
 
 
 def validate_sql_query(

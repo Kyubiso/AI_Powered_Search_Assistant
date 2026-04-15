@@ -107,9 +107,13 @@ def build_system_prompt() -> str:
         "PRAGMA, or transaction statements. "
         "Use only the provided table name and provided columns. "
         "Do not invent joins or extra tables. "
+        "Always wrap every table name and every column name in double quotes. "
+        "This is required even when the identifier looks simple. "
         "Do not wrap SQL in markdown fences. "
         "If the question asks for all symptoms or a full profile, include the relevant "
-        "identifier column and retrieve the full matching row or columns from the single table."
+        "identifier column and retrieve the full matching row or columns from the single table. "
+        "If the query mode is broad_aggregate, aggregate across the broad column set rather than "
+        "returning only a few rows."
     )
 
 
@@ -131,8 +135,11 @@ def build_user_prompt(context: dict) -> str:
             "Requirements:",
             "- Use exactly one SELECT query.",
             "- Use only the listed table and columns.",
+            '- Always use double quotes around table names and column names, for example: SELECT "treatment" FROM "mental_health_survey".',
             "- Add a LIMIT when returning rows unless the question explicitly asks for all matching rows.",
             "- For aggregate questions, use COUNT, AVG, MIN, MAX, SUM, or GROUP BY only when appropriate.",
+            "- For broad_aggregate questions, combine broad schema coverage with aggregate expressions such as AVG(...) across the available columns.",
+            "- Prefer direct column matches from the schema over indirect inference from loosely related columns.",
             "- For broad profile questions, prefer returning the matching full profile from the same table.",
             "- Assume boolean symptom columns use 1/0 or true/false matching as needed in DuckDB.",
         ]
@@ -184,6 +191,21 @@ def basic_sql_sanity_check(sql: str, table_name: str) -> None:
         raise ValueError("Generated SQL does not reference the expected table.")
 
 
+def generate_sql_payload(model: str, context: dict, db_path: Path) -> dict:
+    verify_table_exists(db_path, context["table_name"])
+    generated = generate_sql_response(model, context)
+    basic_sql_sanity_check(generated["sql"], context["table_name"])
+
+    return {
+        "question": context["question"],
+        "query_mode": context["query_mode"],
+        "table_name": context["table_name"],
+        "sql_generation_model": model,
+        "selected_columns": context["selected_columns"],
+        "generated_query": generated,
+    }
+
+
 def prepare_context_from_args(args: argparse.Namespace) -> dict:
     if not args.question:
         raise ValueError("Question is required unless --context-file is provided.")
@@ -218,19 +240,7 @@ def main() -> int:
     else:
         context = prepare_context_from_args(args)
 
-    verify_table_exists(args.db_path, context["table_name"])
-    generated = generate_sql_response(args.model, context)
-    basic_sql_sanity_check(generated["sql"], context["table_name"])
-
-    output = {
-        "question": context["question"],
-        "query_mode": context["query_mode"],
-        "table_name": context["table_name"],
-        "sql_generation_model": args.model,
-        "selected_columns": context["selected_columns"],
-        "generated_query": generated,
-    }
-
+    output = generate_sql_payload(model=args.model, context=context, db_path=args.db_path)
     print(json.dumps(output, indent=2, ensure_ascii=False))
     return 0
 

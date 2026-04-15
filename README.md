@@ -53,6 +53,7 @@ Examples:
 - `utilities/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
 - `utilities/validate_sql.py` - validate generated SQL before execution
 - `utilities/run_sql_query.py` - validate and execute approved SQL in read-only mode
+- `utilities/ask_database.py` - end-to-end flow from retrieval to SQL execution
 - `docs/` - project notes and usage documentation
 
 ## Setup
@@ -207,6 +208,15 @@ python utilities/query_duckdb.py "SHOW TABLES"
 python utilities/query_duckdb.py "SELECT * FROM mental_health_survey LIMIT 5"
 ```
 
+### Step 11. Run the end-to-end pipeline
+
+This performs retrieval, SQL-context preparation, SQL generation, validation, and execution in one command.
+
+```bash
+python utilities/ask_database.py "How many respondents received treatment?"
+python utilities/ask_database.py "Which diseases have fever and cough?"
+```
+
 ## Recommended Workflow
 
 Use this rule:
@@ -235,6 +245,7 @@ In practice:
 - SQL context preparation supports `focused_filter`, `broad_profile`, and `aggregate` query modes
 - generated SQL is validated separately before execution
 - execution utilities always open DuckDB in read-only mode
+- the full end-to-end flow is now available through `utilities/ask_database.py`
 
 ## Documentation
 
