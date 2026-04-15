@@ -52,6 +52,8 @@ Completed so far:
 - terminal query utility implemented for direct SQL testing
 - retrieval-to-schema bridge implemented for SQL preparation
 - DuckDB schema inspection utility implemented
+- SQL-context preparation utility implemented
+- first text-to-SQL generation utility implemented
 - local DuckDB storage added to `.gitignore`
 
 Current verified imported tables:
@@ -69,7 +71,7 @@ Verified behavior:
 - `--dataset` allows rebuilding a selected dataset only
 
 This means the project now has a working local SQL storage layer, but it does not yet have schema-inspection tooling or text-to-SQL generation.
-This means the project now has a working local SQL storage layer and schema access layer, but it does not yet have text-to-SQL generation.
+This means the project now has a working local SQL storage layer, schema access layer, and a first SQL-generation utility, but it does not yet have validation and execution wired into one end-to-end flow.
 
 ## Chosen Technical Direction
 
@@ -225,6 +227,8 @@ Already done:
 - SQL queries can already be executed manually through a terminal utility
 - schema can be inspected programmatically
 - retrieval results can be enriched with DuckDB table and schema context
+- SQL context can be prepared with different query modes
+- OpenAI can generate one candidate read-only SQL query from prepared context
 
 Still missing:
 

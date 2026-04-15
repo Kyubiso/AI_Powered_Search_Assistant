@@ -50,6 +50,7 @@ Examples:
 - `utilities/query_duckdb.py` - run manual SQL queries in DuckDB
 - `utilities/show_duckdb_schema.py` - inspect DuckDB tables and schema
 - `utilities/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
+- `utilities/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
 - `docs/` - project notes and usage documentation
 
 ## Setup
@@ -170,7 +171,16 @@ python utilities/prepare_sql_context.py "Show all symptoms of influenza" --datas
 python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
-### Step 7. Test SQL manually
+### Step 7. Generate SQL
+
+This uses OpenAI to generate one candidate `SELECT` query from the prepared SQL context.
+
+```bash
+python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python utilities/generate_sql.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+```
+
+### Step 8. Test SQL manually
 
 Use DuckDB directly from the terminal:
 
@@ -205,6 +215,7 @@ In practice:
 - embedding generation skips already embedded datasets by default
 - DuckDB import skips already existing tables by default
 - SQL context preparation supports `focused_filter`, `broad_profile`, and `aggregate` query modes
+- SQL generation currently produces one candidate read-only query and still needs a separate validation/execution step
 
 ## Documentation
 

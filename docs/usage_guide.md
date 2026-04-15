@@ -155,7 +155,23 @@ Current query modes:
 - `broad_profile`
 - `aggregate`
 
-### 9. Test SQL manually
+### 9. Generate SQL
+
+Commands:
+
+```bash
+python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python utilities/generate_sql.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+```
+
+What happens:
+
+- prepared SQL context is built or reused
+- OpenAI receives the selected table and selected columns
+- one candidate read-only `SELECT` query is returned as JSON
+- the query is not yet validated or executed automatically
+
+### 10. Test SQL manually
 
 Commands:
 
@@ -244,12 +260,17 @@ python utilities/prepare_sql_context.py "Show all symptoms of influenza" --datas
 python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
+Generate SQL:
+
+```bash
+python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+```
+
 ## Current limitation
 
-The current search still returns ranked dataset matches as JSON, and the SQL-generation step is not implemented yet.
+The current search still returns ranked dataset matches as JSON, and SQL generation is not yet followed by automatic validation and execution.
 
 The next future step could be:
 
-- OpenAI-based SQL generation
 - SQL validation before execution
 - an end-to-end flow from retrieval to SQL answer generation

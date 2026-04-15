@@ -1,8 +1,14 @@
 import argparse
 import json
+import sys
 from pathlib import Path
+from typing import Optional
 
 import duckdb
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
 from sql_context_utils import (
     DEFAULT_DATABASE,
@@ -50,38 +56,53 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
+def prepare_sql_context(
+    question: str,
+    db_path: Path,
+    manifest_path: Path,
+    table_name: Optional[str] = None,
+    dataset_name: Optional[str] = None,
+    top_columns: int = DEFAULT_TOP_COLUMNS,
+) -> dict:
+    if not db_path.exists():
+        raise FileNotFoundError(f"DuckDB file not found: {db_path}")
 
-    if not args.db_path.exists():
-        raise FileNotFoundError(f"DuckDB file not found: {args.db_path}")
-
-    manifest = load_manifest(args.manifest)
-    table_name = resolve_table_name(args.table, args.dataset, manifest)
-    query_mode = classify_query_mode(args.question)
-
-    connection = duckdb.connect(str(args.db_path), read_only=True)
+    manifest = load_manifest(manifest_path)
+    resolved_table_name = resolve_table_name(table_name, dataset_name, manifest)
+    query_mode = classify_query_mode(question)
+    connection = duckdb.connect(str(db_path), read_only=True)
     try:
-        full_schema = load_schema(connection, table_name)
+        full_schema = load_schema(connection, resolved_table_name)
     finally:
         connection.close()
 
     selected_columns = select_columns_for_query_mode(
         schema=full_schema,
-        question=args.question,
+        question=question,
         query_mode=query_mode,
-        top_columns=args.top_columns,
+        top_columns=top_columns,
     )
 
-    output = {
-        "question": args.question,
+    return {
+        "question": question,
         "query_mode": query_mode,
-        "table_name": table_name,
+        "table_name": resolved_table_name,
         "column_count": len(full_schema),
         "selected_column_count": len(selected_columns),
         "selected_columns": selected_columns,
     }
 
+
+def main() -> int:
+    args = parse_args()
+    output = prepare_sql_context(
+        question=args.question,
+        db_path=args.db_path,
+        manifest_path=args.manifest,
+        table_name=args.table,
+        dataset_name=args.dataset,
+        top_columns=args.top_columns,
+    )
     print(json.dumps(output, indent=2, ensure_ascii=False))
     return 0
 
