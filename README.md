@@ -6,10 +6,16 @@ Local healthcare dataset retrieval project based on a simple RAG-style workflow:
 2. generate structured metadata
 3. create embeddings from metadata
 4. search datasets semantically with OpenAI embeddings and ChromaDB
+5. load datasets into DuckDB for later SQL querying
+6. prepare schema context for text-to-SQL generation
 
 ## Current Project State
 
-The current MVP works on local dataset-level retrieval.
+The project now supports:
+
+- local dataset-level retrieval with OpenAI embeddings and ChromaDB
+- local DuckDB storage for manifest-listed CSV datasets
+- schema inspection and SQL-context preparation for the next text-to-SQL step
 
 Implemented parts:
 
@@ -18,6 +24,9 @@ Implemented parts:
 - OpenAI embedding generation
 - ChromaDB vector storage
 - semantic search over datasets
+- DuckDB import for local SQL storage
+- DuckDB schema inspection
+- SQL-context preparation with query-mode selection
 
 ## Important Rule
 
@@ -37,6 +46,14 @@ Examples:
 - `utilities/generate_dataset_metadata.py` - metadata generation script
 - `utilities/generate_embeddings.py` - embedding generation script
 - `utilities/search_datasets.py` - semantic search script
+- `utilities/build_duckdb.py` - import manifest-listed CSV files into DuckDB
+- `utilities/query_duckdb.py` - run manual SQL queries in DuckDB
+- `utilities/show_duckdb_schema.py` - inspect DuckDB tables and schema
+- `utilities/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
+- `utilities/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
+- `utilities/validate_sql.py` - validate generated SQL before execution
+- `utilities/run_sql_query.py` - validate and execute approved SQL in read-only mode
+- `utilities/ask_database.py` - end-to-end flow from retrieval to SQL execution
 - `docs/` - project notes and usage documentation
 
 ## Setup
@@ -44,7 +61,7 @@ Examples:
 ### 1. Install dependencies
 
 ```bash
-pip install pandas openai chromadb
+pip install pandas openai chromadb duckdb
 ```
 
 ### 2. Configure OpenAI API key
@@ -117,30 +134,123 @@ python utilities/search_datasets.py "I need a dataset about drug interactions"
 python utilities/search_datasets.py "Find a dataset about diseases and symptoms"
 ```
 
+### Step 4. Build DuckDB database
+
+This reads the manifest and imports all active CSV datasets into `storage/healthcare.duckdb`.
+
+```bash
+python utilities/build_duckdb.py
+```
+
+Useful options:
+
+```bash
+python utilities/build_duckdb.py --force
+python utilities/build_duckdb.py --dataset "Mental Health Survey" --force
+```
+
+### Step 5. Inspect DuckDB schema
+
+Use this to inspect available tables or one selected dataset schema.
+
+```bash
+python utilities/show_duckdb_schema.py --list-tables
+python utilities/show_duckdb_schema.py --dataset "Mental Health Survey"
+```
+
+For wide tables, you can also ask for question-based column suggestions:
+
+```bash
+python utilities/show_duckdb_schema.py --dataset "Diseases and Symptoms Dataset" --question "Which columns can help find symptoms related to fever and cough?" --top-columns 12
+```
+
+### Step 6. Prepare SQL context
+
+This prepares the table and selected columns that will later be passed into the SQL-generation step.
+
+```bash
+python utilities/prepare_sql_context.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python utilities/prepare_sql_context.py "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+```
+
+### Step 7. Generate SQL
+
+This uses OpenAI to generate one candidate `SELECT` query from the prepared SQL context.
+
+```bash
+python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python utilities/generate_sql.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+```
+
+### Step 8. Validate SQL
+
+This validates a query deterministically before execution.
+
+```bash
+python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+```
+
+### Step 9. Run validated SQL
+
+This validates again and then executes the query in read-only mode.
+
+```bash
+python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+```
+
+### Step 10. Test SQL manually
+
+Use DuckDB directly from the terminal:
+
+```bash
+python utilities/query_duckdb.py "SHOW TABLES"
+python utilities/query_duckdb.py "SELECT * FROM mental_health_survey LIMIT 5"
+```
+
+### Step 11. Run the end-to-end pipeline
+
+This performs retrieval, SQL-context preparation, SQL generation, validation, and execution in one command.
+
+```bash
+python utilities/ask_database.py "How many respondents received treatment?"
+python utilities/ask_database.py "Which diseases have fever and cough?"
+```
+
 ## Recommended Workflow
 
 Use this rule:
 
 - generate metadata when you add or change CSV datasets
 - generate embeddings when metadata changes or when you add a new dataset
+- rebuild DuckDB when the underlying CSV files change
+- use schema/context preparation before text-to-SQL generation
 - run search whenever you want to test retrieval
 
 In practice:
 
 - metadata generation is occasional
 - embedding generation is occasional
+- DuckDB rebuild is occasional
 - searching is frequent
 
 ## Notes
 
 - embeddings are stored locally in `chroma_db/`
+- DuckDB is stored locally in `storage/healthcare.duckdb`
 - the default embedding model is `text-embedding-3-small`. That means, that you need your Open AI API key.
 - metadata generation skips already existing files by default
 - embedding generation skips already embedded datasets by default
+- DuckDB import skips already existing tables by default
+- SQL context preparation supports `focused_filter`, `broad_profile`, and `aggregate` query modes
+- generated SQL is validated separately before execution
+- execution utilities always open DuckDB in read-only mode
+- the full end-to-end flow is now available through `utilities/ask_database.py`
 
 ## Documentation
 
 - [Metadata generation guide](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/generate_dataset_metadata.md)
 - [OpenAI + ChromaDB retrieval guide](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/openai_chromadb_retrieval.md)
 - [Current phase baseline](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/phases/phase_01_current_baseline.md)
+- [DuckDB and text-to-SQL phase](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/phases/phase_03_duckdb_and_text_to_sql.md)
 - [Usage guide](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/usage_guide.md)
