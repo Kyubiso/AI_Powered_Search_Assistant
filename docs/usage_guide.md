@@ -169,9 +169,38 @@ What happens:
 - prepared SQL context is built or reused
 - OpenAI receives the selected table and selected columns
 - one candidate read-only `SELECT` query is returned as JSON
-- the query is not yet validated or executed automatically
+- the query is not executed automatically
 
-### 10. Test SQL manually
+### 10. Validate SQL
+
+Commands:
+
+```bash
+python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+```
+
+What happens:
+
+- only `SELECT` queries are allowed
+- joins and multi-statement queries are rejected
+- DuckDB checks the query with `EXPLAIN` in read-only mode
+
+### 11. Run validated SQL
+
+Commands:
+
+```bash
+python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+```
+
+What happens:
+
+- validation runs first
+- the query is executed only if validation passes
+- DuckDB is opened in read-only mode
+- result rows are returned as JSON
+
+### 12. Test SQL manually
 
 Commands:
 
@@ -266,11 +295,22 @@ Generate SQL:
 python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
 ```
 
+Validate SQL:
+
+```bash
+python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+```
+
+Run validated SQL:
+
+```bash
+python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+```
+
 ## Current limitation
 
-The current search still returns ranked dataset matches as JSON, and SQL generation is not yet followed by automatic validation and execution.
+The current search still returns ranked dataset matches as JSON, and retrieval is not yet automatically connected to SQL generation, validation, and execution in one command.
 
 The next future step could be:
 
-- SQL validation before execution
 - an end-to-end flow from retrieval to SQL answer generation

@@ -54,6 +54,8 @@ Completed so far:
 - DuckDB schema inspection utility implemented
 - SQL-context preparation utility implemented
 - first text-to-SQL generation utility implemented
+- SQL validation utility implemented
+- read-only SQL execution utility implemented
 - local DuckDB storage added to `.gitignore`
 
 Current verified imported tables:
@@ -71,7 +73,7 @@ Verified behavior:
 - `--dataset` allows rebuilding a selected dataset only
 
 This means the project now has a working local SQL storage layer, but it does not yet have schema-inspection tooling or text-to-SQL generation.
-This means the project now has a working local SQL storage layer, schema access layer, and a first SQL-generation utility, but it does not yet have validation and execution wired into one end-to-end flow.
+This means the project now has a working local SQL storage layer, schema access layer, SQL-generation utility, validation utility, and read-only execution utility, but it does not yet have retrieval, generation, validation, and execution wired into one end-to-end flow.
 
 ## Chosen Technical Direction
 
@@ -174,6 +176,7 @@ The exact structure can still be adjusted, but this phase should likely introduc
 - `utilities/retrieve_sql_context.py`
 - `utilities/show_duckdb_schema.py`
 - `utilities/generate_sql.py`
+- `utilities/validate_sql.py`
 - `utilities/run_sql_query.py`
 
 If later integrated into an application flow, these responsibilities can move into `src/` modules.
@@ -229,11 +232,11 @@ Already done:
 - retrieval results can be enriched with DuckDB table and schema context
 - SQL context can be prepared with different query modes
 - OpenAI can generate one candidate read-only SQL query from prepared context
+- generated SQL can be validated deterministically before execution
+- validated SQL can be executed against DuckDB in read-only mode
 
 Still missing:
 
-- safe text-to-SQL generation
-- SQL validation layer for generated queries
 - retrieval plus SQL connected into one end-to-end flow
 
 ## Relation to Previous Phases

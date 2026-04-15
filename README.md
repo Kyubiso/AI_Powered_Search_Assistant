@@ -51,6 +51,8 @@ Examples:
 - `utilities/show_duckdb_schema.py` - inspect DuckDB tables and schema
 - `utilities/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
 - `utilities/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
+- `utilities/validate_sql.py` - validate generated SQL before execution
+- `utilities/run_sql_query.py` - validate and execute approved SQL in read-only mode
 - `docs/` - project notes and usage documentation
 
 ## Setup
@@ -180,7 +182,23 @@ python utilities/generate_sql.py "Which diseases have fever and cough?" --datase
 python utilities/generate_sql.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
-### Step 8. Test SQL manually
+### Step 8. Validate SQL
+
+This validates a query deterministically before execution.
+
+```bash
+python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+```
+
+### Step 9. Run validated SQL
+
+This validates again and then executes the query in read-only mode.
+
+```bash
+python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+```
+
+### Step 10. Test SQL manually
 
 Use DuckDB directly from the terminal:
 
@@ -215,7 +233,8 @@ In practice:
 - embedding generation skips already embedded datasets by default
 - DuckDB import skips already existing tables by default
 - SQL context preparation supports `focused_filter`, `broad_profile`, and `aggregate` query modes
-- SQL generation currently produces one candidate read-only query and still needs a separate validation/execution step
+- generated SQL is validated separately before execution
+- execution utilities always open DuckDB in read-only mode
 
 ## Documentation
 
