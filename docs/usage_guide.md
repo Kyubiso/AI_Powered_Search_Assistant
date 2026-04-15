@@ -10,6 +10,8 @@ Instead of manually opening every CSV file, you:
 2. generate metadata from local CSV files
 3. turn metadata into embeddings
 4. search datasets with natural language queries
+5. import datasets into DuckDB for local SQL querying
+6. prepare schema context for the future text-to-SQL step
 
 ## Before you start
 
@@ -19,6 +21,7 @@ Make sure:
 - the manifest points to the correct files
 - `OPENAI_API_KEY` is available in the shell
 - required packages are installed
+- DuckDB database can be built locally from the manifest-listed CSV files
 
 ## Full workflow
 
@@ -94,6 +97,78 @@ What happens:
 - ChromaDB finds the nearest stored datasets
 - the script returns ranked results as JSON
 
+### 6. Build DuckDB database
+
+Command:
+
+```bash
+python utilities/build_duckdb.py
+```
+
+What happens:
+
+- the manifest is read again
+- CSV files are imported into `storage/healthcare.duckdb`
+- one DuckDB table is created per active dataset
+- existing tables are skipped by default unless `--force` is used
+
+### 7. Inspect DuckDB schema
+
+Commands:
+
+```bash
+python utilities/show_duckdb_schema.py --list-tables
+python utilities/show_duckdb_schema.py --dataset "Mental Health Survey"
+```
+
+For wide tables, you can also ask for question-based column suggestions:
+
+```bash
+python utilities/show_duckdb_schema.py --dataset "Diseases and Symptoms Dataset" --question "Which columns can help find symptoms related to fever and cough?" --top-columns 12
+```
+
+What happens:
+
+- DuckDB schema is read from the local database
+- table names, column names, and types are returned
+- for wide tables, a compact set of relevant columns can be suggested
+
+### 8. Prepare SQL context
+
+Commands:
+
+```bash
+python utilities/prepare_sql_context.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python utilities/prepare_sql_context.py "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+```
+
+What happens:
+
+- the question is classified into a query mode
+- the selected table schema is loaded from DuckDB
+- a compact or broad column set is prepared for the future SQL generator
+
+Current query modes:
+
+- `focused_filter`
+- `broad_profile`
+- `aggregate`
+
+### 9. Test SQL manually
+
+Commands:
+
+```bash
+python utilities/query_duckdb.py "SHOW TABLES"
+python utilities/query_duckdb.py "SELECT * FROM mental_health_survey LIMIT 5"
+```
+
+What happens:
+
+- the query is executed against local DuckDB
+- rows are returned directly in the terminal
+
 ## How to think about it
 
 You do not generate embeddings every time you search.
@@ -102,11 +177,14 @@ Correct workflow:
 
 - metadata: generate when datasets change
 - embeddings: generate when metadata changes
+- DuckDB: rebuild when CSV contents change
+- SQL context: prepare when you want to move from dataset retrieval to row-level querying
 - search: run as often as you want
 
 So yes:
 
 - embeddings are usually generated once per dataset version
+- DuckDB import is usually generated once per dataset version
 - search is run many times afterward
 
 ## Common commands
@@ -145,12 +223,33 @@ python utilities/search_datasets.py "I need a dataset about medication interacti
 python utilities/search_datasets.py "Find a dataset with side effects, dosage and warnings"
 ```
 
+Build DuckDB:
+
+```bash
+python utilities/build_duckdb.py --force
+python utilities/build_duckdb.py --dataset "Mental Health Survey" --force
+```
+
+Inspect schema:
+
+```bash
+python utilities/show_duckdb_schema.py --list-tables
+python utilities/show_duckdb_schema.py --dataset "Drug Labels and Side Effects Dataset"
+```
+
+Prepare SQL context:
+
+```bash
+python utilities/prepare_sql_context.py "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+```
+
 ## Current limitation
 
-The search currently returns ranked dataset matches as JSON.
+The current search still returns ranked dataset matches as JSON, and the SQL-generation step is not implemented yet.
 
 The next future step could be:
 
-- a more user-friendly answer builder
-- column-level retrieval
-- sample-data previews in the final response
+- OpenAI-based SQL generation
+- SQL validation before execution
+- an end-to-end flow from retrieval to SQL answer generation

@@ -50,6 +50,8 @@ Completed so far:
 - local DuckDB database file created at `storage/healthcare.duckdb`
 - CSV-to-DuckDB import utility implemented
 - terminal query utility implemented for direct SQL testing
+- retrieval-to-schema bridge implemented for SQL preparation
+- DuckDB schema inspection utility implemented
 - local DuckDB storage added to `.gitignore`
 
 Current verified imported tables:
@@ -67,6 +69,7 @@ Verified behavior:
 - `--dataset` allows rebuilding a selected dataset only
 
 This means the project now has a working local SQL storage layer, but it does not yet have schema-inspection tooling or text-to-SQL generation.
+This means the project now has a working local SQL storage layer and schema access layer, but it does not yet have text-to-SQL generation.
 
 ## Chosen Technical Direction
 
@@ -166,6 +169,7 @@ The exact structure can still be adjusted, but this phase should likely introduc
 
 - `utilities/build_duckdb.py`
 - `utilities/query_duckdb.py`
+- `utilities/retrieve_sql_context.py`
 - `utilities/show_duckdb_schema.py`
 - `utilities/generate_sql.py`
 - `utilities/run_sql_query.py`
@@ -219,10 +223,11 @@ Already done:
 
 - all active CSV datasets can be loaded into DuckDB
 - SQL queries can already be executed manually through a terminal utility
+- schema can be inspected programmatically
+- retrieval results can be enriched with DuckDB table and schema context
 
 Still missing:
 
-- schema inspection utility
 - safe text-to-SQL generation
 - SQL validation layer for generated queries
 - retrieval plus SQL connected into one end-to-end flow
