@@ -62,7 +62,10 @@ Examples:
 
 ```bash
 pip install pandas openai chromadb duckdb
+pip install -r requirements.txt
 ```
+
+This includes: `pandas`, `openai`, `chromadb`, and `duckdb`.
 
 ### 2. Configure OpenAI API key
 
