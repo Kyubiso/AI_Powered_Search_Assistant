@@ -35,6 +35,7 @@ Python packages:
 
 - `openai`
 - `chromadb`
+- `duckdb`
 
 Environment variable:
 
@@ -43,7 +44,7 @@ Environment variable:
 Example install:
 
 ```bash
-pip install openai chromadb
+pip install openai chromadb duckdb
 ```
 
 Example API key setup:

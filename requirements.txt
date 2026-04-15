@@ -1,0 +1,7 @@
+chromadb
+duckdb
+openai
+pandas
+customtkinter
+kaggle
+

@@ -160,7 +160,7 @@ Target stack:
 
 Execution still depends on:
 
-- installing `openai` and `chromadb`
+- installing `openai`, `chromadb`, and `duckdb`
 - setting `OPENAI_API_KEY`
 
 ## Superseded By
