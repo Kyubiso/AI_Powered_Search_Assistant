@@ -1,0 +1,365 @@
+import json
+import subprocess
+import sys
+import threading
+import tkinter as tk
+from tkinter import ttk, font as tkfont
+from pathlib import Path
+
+import customtkinter as ctk
+
+
+# --------------------------------------------------
+# App configuration
+# --------------------------------------------------
+
+ctk.set_appearance_mode("System")
+ctk.set_default_color_theme("dark-blue")
+
+APP_TITLE = "Agent Assistant"
+WINDOW_SIZE = "920x680"
+MIN_SIZE = (760, 560)
+
+
+# --------------------------------------------------
+# Main application
+# --------------------------------------------------
+
+class AgentApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.is_loading = False
+        self.output_box_visible = False
+
+        # Spinner state
+        self._spinner_running = False
+        self._spinner_frames = ["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"]
+        self._spinner_index = 0
+
+        self._configure_window()
+        self._build_ui()
+
+    # --------------------------------------------------
+    # Window setup
+    # --------------------------------------------------
+
+    def _configure_window(self):
+        self.title(APP_TITLE)
+        self.geometry(WINDOW_SIZE)
+        self.minsize(*MIN_SIZE)
+        self.configure(fg_color=("#f5f3ff", "#1a1029"))
+
+    # --------------------------------------------------
+    # UI construction
+    # --------------------------------------------------
+
+    def _build_ui(self):
+        self._build_header()
+        self._build_input()
+        self._build_output()
+        self._build_table()
+
+    def _build_header(self):
+        ctk.CTkLabel(
+            self,
+            text="Agent Assistant",
+            font=("Segoe UI", 26, "bold"),
+            text_color=("#6d28d9", "#c4b5fd"),
+        ).pack(pady=(24, 8))
+
+        ctk.CTkLabel(
+            self,
+            text="Ask a question. The agents handle the rest.",
+            font=("Segoe UI", 12),
+            text_color=("#0f766e", "#5eead4"),
+        ).pack(pady=(0, 18))
+
+    def _build_input(self):
+        self.input_box = ctk.CTkTextbox(
+            self,
+            height=110,
+            font=("Segoe UI", 13),
+            corner_radius=10,
+        )
+        self.input_box.pack(fill="x", padx=(140, 60))
+
+        # ✅ Ctrl + Enter to run
+        self.input_box.bind("<Control-Return>", lambda _: self.run_agents())
+
+        self.ask_button = ctk.CTkButton(
+            self,
+            text="Ask",
+            height=40,
+            font=("Segoe UI", 14, "bold"),
+            command=self.run_agents,
+        )
+        self.ask_button.pack(pady=16)
+
+        self.loading_label = ctk.CTkLabel(
+            self,
+            text="",
+            font=("Segoe UI", 18, "bold"),
+            text_color=("#0f766e", "#5eead4"),
+        )
+        self.loading_label.pack(pady=(0, 8))
+
+    def _build_output(self):
+        self.output_box = ctk.CTkTextbox(
+            self,
+            height=110,
+            font=("Segoe UI", 13),
+            state="disabled",
+            corner_radius=10,
+            fg_color=("#ccfbf1", "#99f6e4"),
+            text_color=("#0f172a", "#0f172a"),
+        )
+        self.output_box.pack(fill="x", padx=(60, 140))
+        self.output_box.pack_forget()
+
+    def _build_table(self):
+        self.table_frame = ctk.CTkFrame(self, corner_radius=10)
+        self.table_frame.pack(fill="both", expand=True, padx=60, pady=(12, 20))
+        self.table_frame.pack_forget()
+
+        container = tk.Frame(self.table_frame)
+        container.pack(fill="both", expand=True, padx=8, pady=8)
+
+        self.table = ttk.Treeview(container, show="headings", height=14)
+        self.table.grid(row=0, column=0, sticky="nsew")
+        self.table.bind("<Double-1>", self._on_table_double_click)
+
+        self._configure_table_style()
+        self._add_table_scrollbars(container)
+
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+    def _configure_table_style(self):
+        style = ttk.Style()
+        style.configure("Treeview", font=("Segoe UI", 13), rowheight=30)
+        style.configure("Treeview.Heading", font=("Segoe UI", 13, "bold"))
+
+    def _add_table_scrollbars(self, container):
+        y_scroll = ttk.Scrollbar(container, orient="vertical", command=self.table.yview)
+        y_scroll.grid(row=0, column=1, sticky="ns")
+
+        x_scroll = ttk.Scrollbar(container, orient="horizontal", command=self.table.xview)
+        x_scroll.grid(row=1, column=0, sticky="ew")
+
+        self.table.configure(
+            yscrollcommand=y_scroll.set,
+            xscrollcommand=x_scroll.set,
+        )
+
+    # --------------------------------------------------
+    # Spinner helpers
+    # --------------------------------------------------
+
+    def _start_spinner(self):
+        self._spinner_running = True
+        self._spinner_index = 0
+        self._animate_spinner()
+
+    def _stop_spinner(self):
+        self._spinner_running = False
+        self.loading_label.configure(text="")
+
+    def _animate_spinner(self):
+        if not self._spinner_running:
+            return
+
+        frame = self._spinner_frames[self._spinner_index]
+        self.loading_label.configure(text=f"{frame} Running query…")
+
+        self._spinner_index = (self._spinner_index + 1) % len(self._spinner_frames)
+        self.after(120, self._animate_spinner)
+
+    # --------------------------------------------------
+    # Agent integration
+    # --------------------------------------------------
+
+    def _call_agents(self, query: str) -> dict:
+        project_root = Path(__file__).resolve().parents[3]
+
+        completed = subprocess.run(
+            [sys.executable, "-m", "src.backend.pipeline.ask_database", query],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+            check=False,
+        )
+
+        if completed.returncode != 0:
+            return {
+                "text": completed.stderr.strip() or "Failed to run ask_database.",
+                "table": None,
+            }
+
+        if completed.stdout:
+            sys.stdout.write(completed.stdout)
+            sys.stdout.flush()
+
+        try:
+            payload = json.loads(completed.stdout)
+        except json.JSONDecodeError:
+            return {"text": "ask_database returned invalid JSON.", "table": None}
+
+        execution = payload.get("execution") or {}
+        columns = execution.get("columns", [])
+        rows = execution.get("rows", [])
+
+        table = {"columns": columns, "rows": rows} if columns else None
+
+        return {
+            "text": payload.get("text", ""),
+            "table": table,
+        }
+
+    # --------------------------------------------------
+    # Core logic
+    # --------------------------------------------------
+
+    def run_agents(self):
+        if self.is_loading:
+            return
+
+        query = self.input_box.get("1.0", "end").strip()
+        if not query:
+            return
+
+        self._set_loading_state(True)
+
+        threading.Thread(
+            target=self._run_agents_worker,
+            args=(query,),
+            daemon=True,
+        ).start()
+
+    def _run_agents_worker(self, query: str):
+        result = self._call_agents(query)
+        self.after(0, lambda: self._finish_run(result))
+
+    def _finish_run(self, result: dict):
+        self._set_loading_state(False)
+        self._render_text(result.get("text", ""))
+        self._render_table(result.get("table"))
+
+    def _set_loading_state(self, loading: bool):
+        self.is_loading = loading
+        state = "disabled" if loading else "normal"
+
+        self.ask_button.configure(state=state)
+        self.input_box.configure(state=state)
+
+        if loading:
+            # Clear and hide old results while a new query is running.
+            self.table.delete(*self.table.get_children())
+            self.table_frame.pack_forget()
+            self._start_spinner()
+        else:
+            self._stop_spinner()
+
+    # --------------------------------------------------
+    # Rendering helpers
+    # --------------------------------------------------
+
+    def _render_text(self, text: str):
+        if text and not self.output_box_visible:
+            self.output_box.pack(fill="x", padx=(60, 140))
+            self.output_box_visible = True
+        elif not text and self.output_box_visible:
+            self.output_box.pack_forget()
+            self.output_box_visible = False
+
+        self.output_box.configure(state="normal")
+        self.output_box.delete("1.0", "end")
+        self.output_box.insert("end", text)
+        self.output_box.configure(state="disabled")
+
+    def _autosize_columns(self, rows, headings, max_width=420, min_width=100):
+        measure = tkfont.Font(font=("Segoe UI", 13)).measure
+
+        for col_index, heading in enumerate(headings):
+            max_text_width = measure(str(heading))
+
+            for row in rows:
+                if col_index < len(row):
+                    max_text_width = max(
+                        max_text_width, measure(str(row[col_index]))
+                    )
+
+            width = max(min_width, min(max_width, max_text_width + 28))
+            yield width
+
+    def _render_table(self, table: dict | None):
+        self.table.delete(*self.table.get_children())
+
+        if not table:
+            self.table_frame.pack_forget()
+            return
+
+        columns = list(map(str, table["columns"]))
+        rows = table["rows"]
+
+        column_ids = [f"col_{i}" for i in range(len(columns))]
+        self.table.configure(columns=column_ids)
+
+        widths = list(self._autosize_columns(rows, columns))
+
+        for col_id, heading, width in zip(column_ids, columns, widths):
+            self.table.heading(col_id, text=heading)
+            self.table.column(
+                col_id,
+                anchor="w",
+                width=width,
+                minwidth=100,
+                stretch=False,
+            )
+
+        for row in rows:
+            self.table.insert("", "end", values=row)
+
+        self.table_frame.pack(fill="both", expand=True, padx=60, pady=(12, 20))
+
+    # --------------------------------------------------
+    # Cell viewer
+    # --------------------------------------------------
+
+    def _on_table_double_click(self, event):
+        if self.table.identify("region", event.x, event.y) != "cell":
+            return
+
+        row_id = self.table.identify_row(event.y)
+        column_index = int(self.table.identify_column(event.x).replace("#", "")) - 1
+
+        if not row_id:
+            return
+
+        values = self.table.item(row_id, "values")
+        if not (0 <= column_index < len(values)):
+            return
+
+        column_id = self.table["columns"][column_index]
+        heading = self.table.heading(column_id).get("text", column_id)
+
+        self._show_cell_viewer(str(heading), str(values[column_index]))
+
+    def _show_cell_viewer(self, column_name: str, value: str):
+        viewer = ctk.CTkToplevel(self)
+        viewer.title(f"Cell Value – {column_name}")
+        viewer.geometry("900x500")
+        viewer.minsize(600, 300)
+
+        text_box = ctk.CTkTextbox(viewer, font=("Segoe UI", 13), wrap="word")
+        text_box.pack(fill="both", expand=True, padx=14, pady=14)
+        text_box.insert("1.0", value)
+        text_box.configure(state="disabled")
+
+
+# --------------------------------------------------
+# Entry point
+# --------------------------------------------------
+
+if __name__ == "__main__":
+    AgentApp().mainloop()
