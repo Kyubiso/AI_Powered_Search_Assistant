@@ -43,17 +43,17 @@ Examples:
 - `data/` - raw CSV datasets
 - `metadata/Manifests/datasets_manifest.json` - curated dataset manifest
 - `metadata/datasets/` - generated metadata JSON files
-- `utilities/generate_dataset_metadata.py` - metadata generation script
-- `utilities/generate_embeddings.py` - embedding generation script
-- `utilities/search_datasets.py` - semantic search script
-- `utilities/build_duckdb.py` - import manifest-listed CSV files into DuckDB
-- `utilities/query_duckdb.py` - run manual SQL queries in DuckDB
-- `utilities/show_duckdb_schema.py` - inspect DuckDB tables and schema
-- `utilities/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
-- `utilities/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
-- `utilities/validate_sql.py` - validate generated SQL before execution
-- `utilities/run_sql_query.py` - validate and execute approved SQL in read-only mode
-- `utilities/ask_database.py` - end-to-end flow from retrieval to SQL execution
+- `src/backend/data/generate_dataset_metadata.py` - metadata generation script
+- `src/backend/retrieval/generate_embeddings.py` - embedding generation script
+- `src/backend/retrieval/search_datasets.py` - semantic search script
+- `src/backend/data/build_duckdb.py` - import manifest-listed CSV files into DuckDB
+- `src/backend/inspection/query_duckdb.py` - run manual SQL queries in DuckDB
+- `src/backend/inspection/show_duckdb_schema.py` - inspect DuckDB tables and schema
+- `src/backend/sql/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
+- `src/backend/sql/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
+- `src/backend/sql/validate_sql.py` - validate generated SQL before execution
+- `src/backend/sql/run_sql_query.py` - validate and execute approved SQL in read-only mode
+- `src/backend/pipeline/ask_database.py` - end-to-end flow from retrieval to SQL execution
 - `docs/` - project notes and usage documentation
 
 ## Setup
@@ -94,14 +94,14 @@ This reads the manifest and CSV files, then writes metadata JSON files to `metad
  Use **--force** to recreate all datasets metadata or **--dataset** for one specified dataset
 
 ```bash
-python utilities/generate_dataset_metadata.py
+python -m src.backend.data.generate_dataset_metadata
 ```
 
 Useful options:
 
 ```bash
-python utilities/generate_dataset_metadata.py --force
-python utilities/generate_dataset_metadata.py --dataset "Drug-Drug Interactions Dataset" --force
+python -m src.backend.data.generate_dataset_metadata --force
+python -m src.backend.data.generate_dataset_metadata --dataset "Drug-Drug Interactions Dataset" --force
 ```
 
 ### Step 2. Generate embeddings
@@ -109,14 +109,14 @@ python utilities/generate_dataset_metadata.py --dataset "Drug-Drug Interactions 
 This reads the generated metadata, creates OpenAI embeddings, and stores them in ChromaDB.
 
 ```bash
-python utilities/generate_embeddings.py
+python -m src.backend.retrieval.generate_embeddings
 ```
 
 Useful options:
 
 ```bash
-python utilities/generate_embeddings.py --force
-python utilities/generate_embeddings.py --dataset "Drug Labels and Side Effects Dataset" --force
+python -m src.backend.retrieval.generate_embeddings --force
+python -m src.backend.retrieval.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
 ```
 
 ### Step 3. Search datasets
@@ -124,14 +124,14 @@ python utilities/generate_embeddings.py --dataset "Drug Labels and Side Effects 
 This embeds your query and searches the ChromaDB collection.
 
 ```bash
-python utilities/search_datasets.py "Which dataset contains medication side effects and warnings?"
+python -m src.backend.retrieval.search_datasets "Which dataset contains medication side effects and warnings?"
 ```
 
 More examples:
 
 ```bash
-python utilities/search_datasets.py "I need a dataset about drug interactions"
-python utilities/search_datasets.py "Find a dataset about diseases and symptoms"
+python -m src.backend.retrieval.search_datasets "I need a dataset about drug interactions"
+python -m src.backend.retrieval.search_datasets "Find a dataset about diseases and symptoms"
 ```
 
 ### Step 4. Build DuckDB database
@@ -139,14 +139,14 @@ python utilities/search_datasets.py "Find a dataset about diseases and symptoms"
 This reads the manifest and imports all active CSV datasets into `storage/healthcare.duckdb`.
 
 ```bash
-python utilities/build_duckdb.py
+python -m src.backend.data.build_duckdb
 ```
 
 Useful options:
 
 ```bash
-python utilities/build_duckdb.py --force
-python utilities/build_duckdb.py --dataset "Mental Health Survey" --force
+python -m src.backend.data.build_duckdb --force
+python -m src.backend.data.build_duckdb --dataset "Mental Health Survey" --force
 ```
 
 ### Step 5. Inspect DuckDB schema
@@ -154,14 +154,14 @@ python utilities/build_duckdb.py --dataset "Mental Health Survey" --force
 Use this to inspect available tables or one selected dataset schema.
 
 ```bash
-python utilities/show_duckdb_schema.py --list-tables
-python utilities/show_duckdb_schema.py --dataset "Mental Health Survey"
+python -m src.backend.inspection.show_duckdb_schema --list-tables
+python -m src.backend.inspection.show_duckdb_schema --dataset "Mental Health Survey"
 ```
 
 For wide tables, you can also ask for question-based column suggestions:
 
 ```bash
-python utilities/show_duckdb_schema.py --dataset "Diseases and Symptoms Dataset" --question "Which columns can help find symptoms related to fever and cough?" --top-columns 12
+python -m src.backend.inspection.show_duckdb_schema --dataset "Diseases and Symptoms Dataset" --question "Which columns can help find symptoms related to fever and cough?" --top-columns 12
 ```
 
 ### Step 6. Prepare SQL context
@@ -169,9 +169,9 @@ python utilities/show_duckdb_schema.py --dataset "Diseases and Symptoms Dataset"
 This prepares the table and selected columns that will later be passed into the SQL-generation step.
 
 ```bash
-python utilities/prepare_sql_context.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python utilities/prepare_sql_context.py "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 ### Step 7. Generate SQL
@@ -179,8 +179,8 @@ python utilities/prepare_sql_context.py "How many respondents received treatment
 This uses OpenAI to generate one candidate `SELECT` query from the prepared SQL context.
 
 ```bash
-python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python utilities/generate_sql.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.generate_sql "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.generate_sql "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 ### Step 8. Validate SQL
@@ -188,7 +188,7 @@ python utilities/generate_sql.py "How many respondents received treatment?" --da
 This validates a query deterministically before execution.
 
 ```bash
-python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+python -m src.backend.sql.validate_sql "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
 ```
 
 ### Step 9. Run validated SQL
@@ -196,7 +196,7 @@ python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dat
 This validates again and then executes the query in read-only mode.
 
 ```bash
-python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+python -m src.backend.sql.run_sql_query "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
 ```
 
 ### Step 10. Test SQL manually
@@ -204,8 +204,8 @@ python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_coun
 Use DuckDB directly from the terminal:
 
 ```bash
-python utilities/query_duckdb.py "SHOW TABLES"
-python utilities/query_duckdb.py "SELECT * FROM mental_health_survey LIMIT 5"
+python -m src.backend.inspection.query_duckdb "SHOW TABLES"
+python -m src.backend.inspection.query_duckdb "SELECT * FROM mental_health_survey LIMIT 5"
 ```
 
 ### Step 11. Run the end-to-end pipeline
@@ -213,8 +213,8 @@ python utilities/query_duckdb.py "SELECT * FROM mental_health_survey LIMIT 5"
 This performs retrieval, SQL-context preparation, SQL generation, validation, and execution in one command.
 
 ```bash
-python utilities/ask_database.py "How many respondents received treatment?"
-python utilities/ask_database.py "Which diseases have fever and cough?"
+python -m src.backend.pipeline.ask_database "How many respondents received treatment?"
+python -m src.backend.pipeline.ask_database "Which diseases have fever and cough?"
 ```
 
 ## Recommended Workflow
@@ -245,7 +245,7 @@ In practice:
 - SQL context preparation supports `focused_filter`, `broad_profile`, and `aggregate` query modes
 - generated SQL is validated separately before execution
 - execution utilities always open DuckDB in read-only mode
-- the full end-to-end flow is now available through `utilities/ask_database.py`
+- the full end-to-end flow is now available through `src/backend/pipeline/ask_database.py`
 
 ## Documentation
 
@@ -253,4 +253,6 @@ In practice:
 - [OpenAI + ChromaDB retrieval guide](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/openai_chromadb_retrieval.md)
 - [Current phase baseline](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/phases/phase_01_current_baseline.md)
 - [DuckDB and text-to-SQL phase](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/phases/phase_03_duckdb_and_text_to_sql.md)
+- [Backend restructure phase](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/phases/phase_04_backend_restructure.md)
+- [Scripts reference](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/scripts_references.md)
 - [Usage guide](/Users/inis/AI_Search_Assistant/AI_Powered_Search_Assistant/docs/usage_guide.md)
