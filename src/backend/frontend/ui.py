@@ -180,11 +180,10 @@ class AgentApp(ctk.CTk):
     # --------------------------------------------------
 
     def _call_agents(self, query: str) -> dict:
-        script_path = Path(__file__).resolve().parent / "ask_database.py"
-        project_root = Path(__file__).resolve().parents[1]
+        project_root = Path(__file__).resolve().parents[3]
 
         completed = subprocess.run(
-            [sys.executable, str(script_path), query],
+            [sys.executable, "-m", "src.backend.pipeline.ask_database", query],
             capture_output=True,
             text=True,
             cwd=project_root,
