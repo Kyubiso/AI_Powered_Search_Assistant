@@ -1,16 +1,16 @@
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Optional
 
 import duckdb
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from sql_context_utils import DEFAULT_DATABASE, DEFAULT_MANIFEST, load_manifest, resolve_table_name
+from src.backend.sql.sql_context_utils import (
+    DEFAULT_DATABASE,
+    DEFAULT_MANIFEST,
+    load_manifest,
+    resolve_table_name,
+)
 
 
 FORBIDDEN_KEYWORDS = (

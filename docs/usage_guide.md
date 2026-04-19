@@ -56,7 +56,7 @@ Each dataset entry should include:
 Command:
 
 ```bash
-python utilities/generate_dataset_metadata.py
+python -m src.backend.data.generate_dataset_metadata
 ```
 
 What happens:
@@ -73,7 +73,7 @@ Command:
 
 ```bash
 source ~/.zshrc
-python utilities/generate_embeddings.py
+python -m src.backend.retrieval.generate_embeddings
 ```
 
 What happens:
@@ -88,7 +88,7 @@ Command:
 
 ```bash
 source ~/.zshrc
-python utilities/search_datasets.py "Which dataset contains drug warnings and side effects?"
+python -m src.backend.retrieval.search_datasets "Which dataset contains drug warnings and side effects?"
 ```
 
 What happens:
@@ -102,7 +102,7 @@ What happens:
 Command:
 
 ```bash
-python utilities/build_duckdb.py
+python -m src.backend.data.build_duckdb
 ```
 
 What happens:
@@ -117,14 +117,14 @@ What happens:
 Commands:
 
 ```bash
-python utilities/show_duckdb_schema.py --list-tables
-python utilities/show_duckdb_schema.py --dataset "Mental Health Survey"
+python -m src.backend.inspection.show_duckdb_schema --list-tables
+python -m src.backend.inspection.show_duckdb_schema --dataset "Mental Health Survey"
 ```
 
 For wide tables, you can also ask for question-based column suggestions:
 
 ```bash
-python utilities/show_duckdb_schema.py --dataset "Diseases and Symptoms Dataset" --question "Which columns can help find symptoms related to fever and cough?" --top-columns 12
+python -m src.backend.inspection.show_duckdb_schema --dataset "Diseases and Symptoms Dataset" --question "Which columns can help find symptoms related to fever and cough?" --top-columns 12
 ```
 
 What happens:
@@ -138,9 +138,9 @@ What happens:
 Commands:
 
 ```bash
-python utilities/prepare_sql_context.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python utilities/prepare_sql_context.py "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 What happens:
@@ -160,8 +160,8 @@ Current query modes:
 Commands:
 
 ```bash
-python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python utilities/generate_sql.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.generate_sql "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.generate_sql "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 What happens:
@@ -176,7 +176,7 @@ What happens:
 Commands:
 
 ```bash
-python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+python -m src.backend.sql.validate_sql "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
 ```
 
 What happens:
@@ -190,7 +190,7 @@ What happens:
 Commands:
 
 ```bash
-python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+python -m src.backend.sql.run_sql_query "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
 ```
 
 What happens:
@@ -205,8 +205,8 @@ What happens:
 Commands:
 
 ```bash
-python utilities/query_duckdb.py "SHOW TABLES"
-python utilities/query_duckdb.py "SELECT * FROM mental_health_survey LIMIT 5"
+python -m src.backend.inspection.query_duckdb "SHOW TABLES"
+python -m src.backend.inspection.query_duckdb "SELECT * FROM mental_health_survey LIMIT 5"
 ```
 
 What happens:
@@ -219,8 +219,8 @@ What happens:
 Commands:
 
 ```bash
-python utilities/ask_database.py "How many respondents received treatment?"
-python utilities/ask_database.py "Which diseases have fever and cough?"
+python -m src.backend.pipeline.ask_database "How many respondents received treatment?"
+python -m src.backend.pipeline.ask_database "Which diseases have fever and cough?"
 ```
 
 What happens:
@@ -255,80 +255,80 @@ So yes:
 Rebuild metadata for everything:
 
 ```bash
-python utilities/generate_dataset_metadata.py --force
+python -m src.backend.data.generate_dataset_metadata --force
 ```
 
 Rebuild metadata for one dataset:
 
 ```bash
-python utilities/generate_dataset_metadata.py --dataset "Drug-Drug Interactions Dataset" --force
+python -m src.backend.data.generate_dataset_metadata --dataset "Drug-Drug Interactions Dataset" --force
 ```
 
 Rebuild embeddings for everything:
 
 ```bash
 source ~/.zshrc
-python utilities/generate_embeddings.py --force
+python -m src.backend.retrieval.generate_embeddings --force
 ```
 
 Rebuild embeddings for one dataset:
 
 ```bash
 source ~/.zshrc
-python utilities/generate_embeddings.py --dataset "Drug Labels and Side Effects Dataset" --force
+python -m src.backend.retrieval.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
 ```
 
 Search examples:
 
 ```bash
-python utilities/search_datasets.py "Which dataset is about diseases and symptoms?"
-python utilities/search_datasets.py "I need a dataset about medication interactions"
-python utilities/search_datasets.py "Find a dataset with side effects, dosage and warnings"
+python -m src.backend.retrieval.search_datasets "Which dataset is about diseases and symptoms?"
+python -m src.backend.retrieval.search_datasets "I need a dataset about medication interactions"
+python -m src.backend.retrieval.search_datasets "Find a dataset with side effects, dosage and warnings"
 ```
 
 Build DuckDB:
 
 ```bash
-python utilities/build_duckdb.py --force
-python utilities/build_duckdb.py --dataset "Mental Health Survey" --force
+python -m src.backend.data.build_duckdb --force
+python -m src.backend.data.build_duckdb --dataset "Mental Health Survey" --force
 ```
 
 Inspect schema:
 
 ```bash
-python utilities/show_duckdb_schema.py --list-tables
-python utilities/show_duckdb_schema.py --dataset "Drug Labels and Side Effects Dataset"
+python -m src.backend.inspection.show_duckdb_schema --list-tables
+python -m src.backend.inspection.show_duckdb_schema --dataset "Drug Labels and Side Effects Dataset"
 ```
 
 Prepare SQL context:
 
 ```bash
-python utilities/prepare_sql_context.py "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python utilities/prepare_sql_context.py "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 Generate SQL:
 
 ```bash
-python utilities/generate_sql.py "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.generate_sql "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
 ```
 
 Validate SQL:
 
 ```bash
-python utilities/validate_sql.py "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
+python -m src.backend.sql.validate_sql "SELECT diseases FROM diseases_and_symptoms_dataset WHERE fever = 1 AND cough = 1 LIMIT 5" --table diseases_and_symptoms_dataset
 ```
 
 Run validated SQL:
 
 ```bash
-python utilities/run_sql_query.py "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
+python -m src.backend.sql.run_sql_query "SELECT treatment, COUNT(*) AS respondent_count FROM mental_health_survey GROUP BY treatment LIMIT 5" --table mental_health_survey --limit 5
 ```
 
 Run full pipeline:
 
 ```bash
-python utilities/ask_database.py "How many respondents received treatment?"
+python -m src.backend.pipeline.ask_database "How many respondents received treatment?"
 ```
 
 ## Current limitation

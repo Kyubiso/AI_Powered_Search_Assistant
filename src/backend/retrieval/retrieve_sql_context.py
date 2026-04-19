@@ -7,8 +7,8 @@ from typing import Any, Optional
 
 import duckdb
 
-DEFAULT_MANIFEST = Path("metadata/Manifests/datasets_manifest.json")
-DEFAULT_DATABASE = Path("storage/healthcare.duckdb")
+from src.backend.sql.sql_context_utils import DEFAULT_DATABASE, DEFAULT_MANIFEST
+
 DEFAULT_CHROMA_DIR = Path("chroma_db")
 DEFAULT_COLLECTION = "dataset_metadata"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
@@ -141,6 +141,23 @@ def build_table_name(entry: dict) -> str:
     return normalize_name(file_path.stem)
 
 
+def load_dataset_description(manifest_entry: dict) -> str:
+    metadata_path_value = str(manifest_entry.get("metadata_path", "")).strip()
+    if metadata_path_value:
+        metadata_path = Path(metadata_path_value)
+        if metadata_path.exists():
+            try:
+                with metadata_path.open("r", encoding="utf-8") as metadata_file:
+                    metadata = json.load(metadata_file)
+                description = str(metadata.get("description", "")).strip()
+                if description:
+                    return description
+            except (OSError, json.JSONDecodeError):
+                pass
+
+    return str(manifest_entry.get("description", "")).strip()
+
+
 def normalize_name(value: str) -> str:
     normalized = value.strip().lower()
     normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
@@ -195,6 +212,7 @@ def enrich_with_duckdb_context(
             enriched_item = dict(item)
             enriched_item["table_name"] = table_name
             enriched_item["schema"] = schema
+            enriched_item["description"] = load_dataset_description(manifest_entry)
             output.append(enriched_item)
 
         return output

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import duckdb
 
-from sql_context_utils import (
+from src.backend.sql.sql_context_utils import (
     DEFAULT_DATABASE,
     DEFAULT_MANIFEST,
     DEFAULT_TOP_COLUMNS,
