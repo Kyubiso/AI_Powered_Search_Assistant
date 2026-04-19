@@ -7,8 +7,8 @@ from typing import Any, Optional
 
 import duckdb
 
-DEFAULT_MANIFEST = Path("metadata/Manifests/datasets_manifest.json")
-DEFAULT_DATABASE = Path("storage/healthcare.duckdb")
+from src.backend.sql.sql_context_utils import DEFAULT_DATABASE, DEFAULT_MANIFEST
+
 DEFAULT_CHROMA_DIR = Path("chroma_db")
 DEFAULT_COLLECTION = "dataset_metadata"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"

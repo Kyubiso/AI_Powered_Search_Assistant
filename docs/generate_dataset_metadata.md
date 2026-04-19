@@ -6,7 +6,7 @@ This utility generates structured metadata JSON files from the shared dataset ma
 
 Script:
 
-- `utilities/generate_dataset_metadata.py`
+- `src/backend/data/generate_dataset_metadata.py`
 
 Input:
 
@@ -48,25 +48,25 @@ Optional behavior:
 Generate metadata only for datasets that do not already have metadata:
 
 ```bash
-python utilities/generate_dataset_metadata.py
+python -m src.backend.data.generate_dataset_metadata
 ```
 
 Regenerate everything:
 
 ```bash
-python utilities/generate_dataset_metadata.py --force
+python -m src.backend.data.generate_dataset_metadata --force
 ```
 
 Regenerate one dataset only:
 
 ```bash
-python utilities/generate_dataset_metadata.py --dataset "Drug-Drug Interactions Dataset" --force
+python -m src.backend.data.generate_dataset_metadata --dataset "Drug-Drug Interactions Dataset" --force
 ```
 
 Use a custom number of sample rows:
 
 ```bash
-python utilities/generate_dataset_metadata.py --sample-rows 5
+python -m src.backend.data.generate_dataset_metadata --sample-rows 5
 ```
 
 ## Notes

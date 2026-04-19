@@ -1,15 +1,8 @@
 import argparse
 import json
-import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from generate_sql import DEFAULT_MODEL, generate_sql_payload
-from prepare_sql_context import prepare_sql_context
-from retrieve_sql_context import (
+from src.backend.retrieval.retrieve_sql_context import (
     DEFAULT_CHROMA_DIR,
     DEFAULT_COLLECTION,
     DEFAULT_EMBEDDING_MODEL,
@@ -19,9 +12,11 @@ from retrieve_sql_context import (
     load_manifest,
     retrieve_datasets,
 )
-from run_sql_query import execute_query
-from sql_context_utils import DEFAULT_TOP_COLUMNS
-from sql_validation_utils import validate_sql_query
+from src.backend.sql.generate_sql import DEFAULT_MODEL, generate_sql_payload
+from src.backend.sql.prepare_sql_context import prepare_sql_context
+from src.backend.sql.run_sql_query import execute_query
+from src.backend.sql.sql_context_utils import DEFAULT_TOP_COLUMNS
+from src.backend.sql.sql_validation_utils import validate_sql_query
 
 
 DEFAULT_SQL_TOP_K = 3

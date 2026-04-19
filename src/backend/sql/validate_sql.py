@@ -1,13 +1,8 @@
 import argparse
 import json
-import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from sql_validation_utils import (
+from src.backend.sql.sql_validation_utils import (
     DEFAULT_DATABASE,
     DEFAULT_MANIFEST,
     load_generated_payload,

@@ -1,17 +1,16 @@
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 
 import duckdb
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from prepare_sql_context import prepare_sql_context
-from sql_context_utils import DEFAULT_DATABASE, DEFAULT_MANIFEST, DEFAULT_TOP_COLUMNS
+from src.backend.sql.prepare_sql_context import prepare_sql_context
+from src.backend.sql.sql_context_utils import (
+    DEFAULT_DATABASE,
+    DEFAULT_MANIFEST,
+    DEFAULT_TOP_COLUMNS,
+)
 
 
 DEFAULT_MODEL = "gpt-4o-mini"
