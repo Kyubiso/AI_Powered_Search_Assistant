@@ -3,8 +3,8 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
-from tkinter import ttk, font as tkfont
 from pathlib import Path
+from tkinter import font as tkfont, ttk
 
 import customtkinter as ctk
 
@@ -31,6 +31,9 @@ class AgentApp(ctk.CTk):
 
         self.is_loading = False
         self.output_box_visible = False
+        self.sql_box_visible = False
+        self.sql_details_visible = False
+        self.current_sql_details = ""
 
         # Spinner state
         self._spinner_running = False
@@ -58,7 +61,13 @@ class AgentApp(ctk.CTk):
         self._build_header()
         self._build_input()
         self._build_output()
+        self._build_sql_details()
         self._build_table()
+
+    def _get_sql_anchor_widget(self):
+        if self.output_box_visible:
+            return self.output_box
+        return self.loading_label
 
     def _build_header(self):
         ctk.CTkLabel(
@@ -84,7 +93,6 @@ class AgentApp(ctk.CTk):
         )
         self.input_box.pack(fill="x", padx=(140, 60))
 
-        # ✅ Ctrl + Enter to run
         self.input_box.bind("<Control-Return>", lambda _: self.run_agents())
 
         self.ask_button = ctk.CTkButton(
@@ -116,6 +124,29 @@ class AgentApp(ctk.CTk):
         )
         self.output_box.pack(fill="x", padx=(60, 140))
         self.output_box.pack_forget()
+
+    def _build_sql_details(self):
+        self.sql_button = ctk.CTkButton(
+            self,
+            text="Show SQL Query",
+            height=34,
+            font=("Segoe UI", 13, "bold"),
+            command=self._toggle_sql_details,
+        )
+        self.sql_button.pack(pady=(0, 10))
+        self.sql_button.pack_forget()
+
+        self.sql_box = ctk.CTkTextbox(
+            self,
+            height=180,
+            font=("Consolas", 12),
+            state="disabled",
+            corner_radius=10,
+            fg_color=("#ede9fe", "#2a1842"),
+            text_color=("#1f2937", "#f3f4f6"),
+        )
+        self.sql_box.pack(fill="x", padx=(60, 140))
+        self.sql_box.pack_forget()
 
     def _build_table(self):
         self.table_frame = ctk.CTkFrame(self, corner_radius=10)
@@ -180,7 +211,7 @@ class AgentApp(ctk.CTk):
     # --------------------------------------------------
 
     def _call_agents(self, query: str) -> dict:
-        project_root = Path(__file__).resolve().parents[3]
+        project_root = Path(__file__).resolve().parents[2]
 
         completed = subprocess.run(
             [sys.executable, "-m", "src.backend.pipeline.ask_database", query],
@@ -208,12 +239,37 @@ class AgentApp(ctk.CTk):
         execution = payload.get("execution") or {}
         columns = execution.get("columns", [])
         rows = execution.get("rows", [])
+        generated_sql = payload.get("generated_sql") or {}
+        selected_dataset = payload.get("selected_dataset") or {}
 
         table = {"columns": columns, "rows": rows} if columns else None
 
+        dataset_name = selected_dataset.get("dataset_name")
+
+        validation = payload.get("validation") or {}
+        text_parts = []
+        if validation.get("is_valid") is False and validation.get("violations"):
+            text_parts.append("Validation failed:")
+            text_parts.extend(f"- {item}" for item in validation["violations"])
+
+        sql_lines = []
+        if dataset_name:
+            sql_lines.append(f"Selected dataset: {dataset_name}")
+        if generated_sql.get("chosen_dataset_name"):
+            sql_lines.append(f"Chosen candidate: {generated_sql['chosen_dataset_name']}")
+        if generated_sql.get("final_mode"):
+            sql_lines.append(f"Final mode: {generated_sql['final_mode']}")
+        if generated_sql.get("mode_decision"):
+            sql_lines.append(f"Mode decision: {generated_sql['mode_decision']}")
+        if generated_sql.get("explanation"):
+            sql_lines.append(f"Explanation: {generated_sql['explanation']}")
+        if generated_sql.get("sql"):
+            sql_lines.extend(["", "SQL:", generated_sql["sql"]])
+
         return {
-            "text": payload.get("text", ""),
+            "text": "\n".join(text_parts),
             "table": table,
+            "sql_details": "\n".join(sql_lines).strip(),
         }
 
     # --------------------------------------------------
@@ -243,6 +299,7 @@ class AgentApp(ctk.CTk):
     def _finish_run(self, result: dict):
         self._set_loading_state(False)
         self._render_text(result.get("text", ""))
+        self._render_sql_details(result.get("sql_details", ""))
         self._render_table(result.get("table"))
 
     def _set_loading_state(self, loading: bool):
@@ -253,9 +310,9 @@ class AgentApp(ctk.CTk):
         self.input_box.configure(state=state)
 
         if loading:
-            # Clear and hide old results while a new query is running.
             self.table.delete(*self.table.get_children())
             self.table_frame.pack_forget()
+            self._render_sql_details("")
             self._start_spinner()
         else:
             self._stop_spinner()
@@ -276,6 +333,49 @@ class AgentApp(ctk.CTk):
         self.output_box.delete("1.0", "end")
         self.output_box.insert("end", text)
         self.output_box.configure(state="disabled")
+
+    def _render_sql_details(self, sql_details: str):
+        self.current_sql_details = sql_details.strip()
+        should_show_button = bool(self.current_sql_details)
+
+        if should_show_button and not self.sql_box_visible:
+            self.sql_button.configure(text="Show SQL Query")
+            self.sql_button.pack(after=self._get_sql_anchor_widget(), pady=(0, 10))
+            self.sql_box_visible = True
+        elif not should_show_button and self.sql_box_visible:
+            self.sql_button.pack_forget()
+            self.sql_box_visible = False
+
+        if not should_show_button:
+            if self.sql_details_visible:
+                self.sql_box.pack_forget()
+                self.sql_details_visible = False
+            self.sql_box.configure(state="normal")
+            self.sql_box.delete("1.0", "end")
+            self.sql_box.configure(state="disabled")
+            return
+
+        self.sql_box.configure(state="normal")
+        self.sql_box.delete("1.0", "end")
+        self.sql_box.insert("end", self.current_sql_details)
+        self.sql_box.configure(state="disabled")
+
+        if self.sql_details_visible:
+            self.sql_box.pack(after=self.sql_button, fill="x", padx=(60, 140), pady=(0, 10))
+
+    def _toggle_sql_details(self):
+        if not self.current_sql_details:
+            return
+
+        if self.sql_details_visible:
+            self.sql_box.pack_forget()
+            self.sql_button.configure(text="Show SQL Query")
+            self.sql_details_visible = False
+            return
+
+        self.sql_box.pack(after=self.sql_button, fill="x", padx=(60, 140), pady=(0, 10))
+        self.sql_button.configure(text="Hide SQL Query")
+        self.sql_details_visible = True
 
     def _autosize_columns(self, rows, headings, max_width=420, min_width=100):
         measure = tkfont.Font(font=("Segoe UI", 13)).measure
@@ -356,10 +456,6 @@ class AgentApp(ctk.CTk):
         text_box.insert("1.0", value)
         text_box.configure(state="disabled")
 
-
-# --------------------------------------------------
-# Entry point
-# --------------------------------------------------
 
 if __name__ == "__main__":
     AgentApp().mainloop()
