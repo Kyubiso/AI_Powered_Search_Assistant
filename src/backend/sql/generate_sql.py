@@ -78,8 +78,16 @@ def build_sql_output_schema() -> dict:
     return {
         "type": "object",
         "properties": {
-            "query_mode": {"type": "string"},
+            "chosen_candidate_index": {"type": "integer"},
+            "chosen_dataset_name": {"type": "string"},
+            "suggested_mode": {"type": "string"},
+            "final_mode": {"type": "string"},
+            "mode_decision": {"type": "string"},
             "table_name": {"type": "string"},
+            "scope": {
+                "type": "string",
+                "enum": ["focused_schema", "broad_schema", "full_schema"],
+            },
             "sql": {"type": "string"},
             "selected_columns_used": {
                 "type": "array",
@@ -88,8 +96,13 @@ def build_sql_output_schema() -> dict:
             "explanation": {"type": "string"},
         },
         "required": [
-            "query_mode",
+            "chosen_candidate_index",
+            "chosen_dataset_name",
+            "suggested_mode",
+            "final_mode",
+            "mode_decision",
             "table_name",
+            "scope",
             "sql",
             "selected_columns_used",
             "explanation",
@@ -104,11 +117,16 @@ def build_system_prompt() -> str:
         "Return exactly one SQL SELECT statement as JSON. "
         "Never use INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, COPY, ATTACH, DETACH, "
         "PRAGMA, or transaction statements. "
-        "Use only the provided table name and provided columns. "
-        "Do not invent joins or extra tables. "
+        "Use only the provided candidate datasets, table names, and provided columns. "
+        "Do not invent joins, extra tables, or a third dataset outside the candidates. "
         "Always wrap every table name and every column name in double quotes. "
         "This is required even when the identifier looks simple. "
         "Do not wrap SQL in markdown fences. "
+        "Do not add LIMIT by default. "
+        "Use LIMIT only when the user explicitly asks for a preview, sample, first N rows, "
+        "or top N results. "
+        "You may keep or override the suggested mode if the schema and question imply a better mode. "
+        "You may choose a non-primary candidate when its schema and description fit the question better. "
         "If the question asks for all symptoms or a full profile, include the relevant "
         "identifier column and retrieve the full matching row or columns from the single table. "
         "If the query mode is broad_aggregate, aggregate across the broad column set rather than "
@@ -117,30 +135,65 @@ def build_system_prompt() -> str:
 
 
 def build_user_prompt(context: dict) -> str:
-    lines = [
-        "Generate a single read-only DuckDB SQL query from this context.",
-        f"Question: {context['question']}",
-        f"Query mode: {context['query_mode']}",
-        f"Table name: {context['table_name']}",
-        "Available columns:",
-    ]
+    if "candidates" in context:
+        lines = [
+            "Generate a single read-only DuckDB SQL query from these retrieved dataset candidates.",
+            f"Question: {context['question']}",
+            f"Suggested candidate index: {context['suggested_candidate_index']}",
+            f"Suggested dataset name: {context['suggested_dataset_name']}",
+            "",
+            "Candidates:",
+        ]
 
-    for column in context["selected_columns"]:
-        lines.append(f"- {column['name']} ({column['type']})")
+        for candidate in context["candidates"]:
+            lines.extend(
+                [
+                    f"Candidate {candidate['candidate_index']}:",
+                    f"- Dataset name: {candidate['dataset_name']}",
+                    f"- Table name: {candidate['table_name']}",
+                    f"- Source: {candidate.get('source', '')}",
+                    f"- Retrieval distance: {candidate.get('distance', '')}",
+                    f"- Description: {candidate.get('description', '')}",
+                    f"- Suggested mode: {candidate['query_mode']}",
+                    f"- Full column count: {candidate['column_count']}",
+                    "- Available columns:",
+                ]
+            )
+            for column in candidate["selected_columns"]:
+                lines.append(f'  - {column["name"]} ({column["type"]})')
+            lines.append("")
+    else:
+        lines = [
+            "Generate a single read-only DuckDB SQL query from this context.",
+            f"Question: {context['question']}",
+            f"Suggested mode: {context['query_mode']}",
+            f"Table name: {context['table_name']}",
+            f"Full column count: {context['column_count']}",
+            "Available columns:",
+        ]
+
+        for column in context["selected_columns"]:
+            lines.append(f"- {column['name']} ({column['type']})")
 
     lines.extend(
         [
             "",
             "Requirements:",
             "- Use exactly one SELECT query.",
-            "- Use only the listed table and columns.",
+            "- Use only one candidate dataset and only that candidate's table and columns.",
             '- Always use double quotes around table names and column names, for example: SELECT "treatment" FROM "mental_health_survey".',
-            "- Add a LIMIT when returning rows unless the question explicitly asks for all matching rows.",
+            "- Decide whether the suggested candidate and suggested mode are correct. You may keep them or replace them with a better candidate and final mode.",
+            "- Return all necessary matching rows by default. Use LIMIT only when the user explicitly asks for a preview, sample, first N rows, or top N results.",
+            "- Do not silently truncate healthcare-relevant results.",
             "- For aggregate questions, use COUNT, AVG, MIN, MAX, SUM, or GROUP BY only when appropriate.",
             "- For broad_aggregate questions, combine broad schema coverage with aggregate expressions such as AVG(...) across the available columns.",
             "- Prefer direct column matches from the schema over indirect inference from loosely related columns.",
             "- For broad profile questions, prefer returning the matching full profile from the same table.",
             "- Assume boolean symptom columns use 1/0 or true/false matching as needed in DuckDB.",
+            "- Return chosen_candidate_index as the candidate number you selected.",
+            "- Return chosen_dataset_name for the candidate you selected.",
+            "- Fill selected_columns_used with the columns actually referenced in the SQL.",
+            "- Set scope to focused_schema, broad_schema, or full_schema depending on how much schema coverage the query needs.",
         ]
     )
 
@@ -190,17 +243,51 @@ def basic_sql_sanity_check(sql: str, table_name: str) -> None:
         raise ValueError("Generated SQL does not reference the expected table.")
 
 
-def generate_sql_payload(model: str, context: dict, db_path: Path) -> dict:
+def verify_context_tables(context: dict, db_path: Path) -> None:
+    if "candidates" in context:
+        for candidate in context["candidates"]:
+            verify_table_exists(db_path, candidate["table_name"])
+        return
+
     verify_table_exists(db_path, context["table_name"])
+
+
+def resolve_generated_table(context: dict, generated: dict) -> str:
+    table_name = generated["table_name"]
+
+    if "candidates" not in context:
+        return table_name
+
+    allowed_candidates = {
+        candidate["candidate_index"]: candidate for candidate in context["candidates"]
+    }
+    chosen_index = generated["chosen_candidate_index"]
+    if chosen_index not in allowed_candidates:
+        raise ValueError(f"Generated candidate index is not allowed: {chosen_index}")
+
+    chosen_candidate = allowed_candidates[chosen_index]
+    if chosen_candidate["table_name"] != table_name:
+        raise ValueError(
+            "Generated table name does not match the chosen candidate table: "
+            f"{table_name}"
+        )
+
+    return table_name
+
+
+def generate_sql_payload(model: str, context: dict, db_path: Path) -> dict:
+    verify_context_tables(context, db_path)
     generated = generate_sql_response(model, context)
-    basic_sql_sanity_check(generated["sql"], context["table_name"])
+    expected_table = resolve_generated_table(context, generated)
+    basic_sql_sanity_check(generated["sql"], expected_table)
 
     return {
         "question": context["question"],
-        "query_mode": context["query_mode"],
-        "table_name": context["table_name"],
+        "suggested_mode": context.get("query_mode"),
+        "table_name": expected_table,
         "sql_generation_model": model,
-        "selected_columns": context["selected_columns"],
+        "selected_columns": context.get("selected_columns"),
+        "candidate_contexts": context.get("candidates"),
         "generated_query": generated,
     }
 
