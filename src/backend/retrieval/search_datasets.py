@@ -1,21 +1,25 @@
 import argparse
 import json
-import os
 from pathlib import Path
 
 import chromadb
-from openai import OpenAI
+
+from src.backend.retrieval.embedding_model import (
+    DEFAULT_EMBEDDING_MODEL,
+    embed_text,
+    get_embedding_model,
+)
 
 
 DEFAULT_CHROMA_DIR = Path("chroma_db")
 DEFAULT_COLLECTION = "dataset_metadata"
-DEFAULT_MODEL = "text-embedding-3-small"
+DEFAULT_MODEL = DEFAULT_EMBEDDING_MODEL
 DEFAULT_TOP_K = 3
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Search embedded datasets in ChromaDB using an OpenAI embedding query."
+        description="Search embedded datasets in ChromaDB using a local embedding query."
     )
     parser.add_argument("query", help="Natural language query.")
     parser.add_argument(
@@ -32,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help=f"OpenAI embedding model. Default: {DEFAULT_MODEL}",
+        help=f"SentenceTransformer embedding model. Default: {DEFAULT_MODEL}",
     )
     parser.add_argument(
         "--top-k",
@@ -43,25 +47,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def validate_openai_api_key() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is not set.")
-
-
-def embed_query(client: OpenAI, model: str, text: str) -> list[float]:
-    response = client.embeddings.create(model=model, input=text)
-    return response.data[0].embedding
-
-
 def main() -> int:
     args = parse_args()
-    validate_openai_api_key()
 
-    client = OpenAI()
+    model = get_embedding_model(args.model)
     chroma_client = chromadb.PersistentClient(path=str(args.chroma_dir))
     collection = chroma_client.get_collection(name=args.collection)
 
-    query_embedding = embed_query(client, args.model, args.query)
+    query_embedding = embed_text(model, args.query)
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=args.top_k,

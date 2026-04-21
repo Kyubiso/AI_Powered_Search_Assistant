@@ -1,17 +1,20 @@
 import argparse
 import json
-import os
 import re
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import duckdb
 
+from src.backend.retrieval.embedding_model import (
+    DEFAULT_EMBEDDING_MODEL,
+    embed_text,
+    get_embedding_model,
+)
 from src.backend.sql.sql_context_utils import DEFAULT_DATABASE, DEFAULT_MANIFEST
 
 DEFAULT_CHROMA_DIR = Path("chroma_db")
 DEFAULT_COLLECTION = "dataset_metadata"
-DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
 DEFAULT_TOP_K = 3
 
 
@@ -49,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         default=DEFAULT_EMBEDDING_MODEL,
-        help=f"OpenAI embedding model. Default: {DEFAULT_EMBEDDING_MODEL}",
+        help=f"SentenceTransformer embedding model. Default: {DEFAULT_EMBEDDING_MODEL}",
     )
     parser.add_argument(
         "--top-k",
@@ -58,11 +61,6 @@ def parse_args() -> argparse.Namespace:
         help=f"Number of retrieved datasets to enrich. Default: {DEFAULT_TOP_K}",
     )
     return parser.parse_args()
-
-
-def validate_openai_api_key() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is not set.")
 
 
 def load_manifest(manifest_path: Path) -> list[dict]:
@@ -75,11 +73,6 @@ def load_manifest(manifest_path: Path) -> list[dict]:
     return manifest
 
 
-def embed_query(client: Any, model: str, text: str) -> list[float]:
-    response = client.embeddings.create(model=model, input=text)
-    return response.data[0].embedding
-
-
 def retrieve_datasets(
     query: str,
     chroma_dir: Path,
@@ -88,15 +81,12 @@ def retrieve_datasets(
     top_k: int,
 ) -> list[dict]:
     import chromadb
-    from openai import OpenAI
 
-    validate_openai_api_key()
-
-    client = OpenAI()
+    model_instance = get_embedding_model(model)
     chroma_client = chromadb.PersistentClient(path=str(chroma_dir))
     collection = chroma_client.get_collection(name=collection_name)
 
-    query_embedding = embed_query(client, model, query)
+    query_embedding = embed_text(model_instance, query)
     results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
 
     output = []

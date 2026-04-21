@@ -1,21 +1,25 @@
 import argparse
 import json
-import os
 from pathlib import Path
 
 import chromadb
-from openai import OpenAI
+
+from src.backend.retrieval.embedding_model import (
+    DEFAULT_EMBEDDING_MODEL,
+    embed_text,
+    get_embedding_model,
+)
 
 
 DEFAULT_MANIFEST = Path("metadata/Manifests/datasets_manifest.json")
 DEFAULT_CHROMA_DIR = Path("chroma_db")
 DEFAULT_COLLECTION = "dataset_metadata"
-DEFAULT_MODEL = "text-embedding-3-small"
+DEFAULT_MODEL = DEFAULT_EMBEDDING_MODEL
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate OpenAI embeddings from dataset metadata and store them in ChromaDB."
+        description="Generate local BERT embeddings from dataset metadata and store them in ChromaDB."
     )
     parser.add_argument(
         "--manifest",
@@ -37,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help=f"OpenAI embedding model. Default: {DEFAULT_MODEL}",
+        help=f"SentenceTransformer embedding model. Default: {DEFAULT_MODEL}",
     )
     parser.add_argument(
         "--dataset",
@@ -91,16 +95,6 @@ def build_record_id(metadata: dict) -> str:
     return Path(metadata["file_path"]).stem
 
 
-def validate_openai_api_key() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is not set.")
-
-
-def embed_text(client: OpenAI, model: str, text: str) -> list[float]:
-    response = client.embeddings.create(model=model, input=text)
-    return response.data[0].embedding
-
-
 def upsert_metadata(
     collection,
     metadata: dict,
@@ -134,7 +128,6 @@ def should_skip(collection, record_id: str, force: bool) -> bool:
 
 def main() -> int:
     args = parse_args()
-    validate_openai_api_key()
 
     manifest = load_manifest(args.manifest)
     manifest = filter_manifest(manifest, args.datasets)
@@ -142,7 +135,7 @@ def main() -> int:
         print("No matching datasets found in the manifest.")
         return 1
 
-    client = OpenAI()
+    model = get_embedding_model(args.model)
     chroma_client = chromadb.PersistentClient(path=str(args.chroma_dir))
     collection = chroma_client.get_or_create_collection(
         name=args.collection,
@@ -159,7 +152,7 @@ def main() -> int:
             continue
 
         document = build_document(metadata)
-        embedding = embed_text(client, args.model, document)
+        embedding = embed_text(model, document)
         upsert_metadata(collection, metadata, embedding)
         print(f"Embedded dataset: {metadata['dataset_name']}")
 
