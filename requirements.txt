@@ -4,4 +4,4 @@ openai
 pandas
 customtkinter
 kaggle
-
+sentence-transformers

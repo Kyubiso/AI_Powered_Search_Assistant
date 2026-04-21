@@ -1,3 +1,8 @@
+# ⚠️ DEPRECATED
+
+Use:
+CodexPrompt_v2_refactor_en.md
+
 # Codex Prompt — Asystent Programowania do projektu RAG Healthcare
 
 ## Rola
