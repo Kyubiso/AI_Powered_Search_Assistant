@@ -6,7 +6,8 @@
     "source": "https://www.kaggle.com/datasets/dhivyeshrk/diseases-and-symptoms-dataset",
     "created_at": "2026-03-20",
     "domain": "healthcare, symptom-based disease classification and clinical decision support",
-    "description": "The dataset contains disease names along with the symptoms faced by the respective patient. There are a total of 773 unique diseases and 377 symptoms, with ~246,000 rows. The dataset was artificially generated, preserving Symptom Severity and Disease Occurrence Possibility."
+    "description": "The dataset contains disease names along with the symptoms faced by the respective patient. There are a total of 773 unique diseases and 377 symptoms, with ~246,000 rows. The dataset was artificially generated, preserving Symptom Severity and Disease Occurrence Possibility.",
+    "data_interpretation_notes": "•Symptoms are encoded as binary columns.• Value semantics:- 1 means the symptom is present - 0 means the symptom is not present• A value of 0 is an explicit negative, not missing or unknown.• Every row contains a complete symptom profile.• Absence of a symptom (0) should be treated as meaningful information.• Column names represent symptoms directly; values are independent flags."
   },
   {
     "file_path": "data/db_drug_interactions.csv",
@@ -15,7 +16,8 @@
     "source": "https://www.kaggle.com/datasets/mghobashy/drug-drug-interactions?select=db_drug_interactions.csv",
     "created_at": "2026-03-20",
     "domain": "healthcare, pharmacology, drug-drug interaction analysis",
-    "description": "This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs."
+    "description": "This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs.",
+    "data_interpretation_notes":"• Each record represents an interaction between two drugs.• Drug order does not change the meaning of the interaction.• Interaction Description is free text explaining the relationship."
   },
   {
     "file_path": "data/realistic_drug_labels_side_effects.csv",
@@ -24,7 +26,8 @@
     "source": "https://www.kaggle.com/datasets/pratyushpuri/drug-labels-and-side-effects-dataset-1400-records",
     "created_at": "2026-03-20",
     "domain": "healthcare, pharmaceutical safety, drug label and adverse effect analysis",
-    "description": "This comprehensive pharmaceutical synthetic dataset contains 1,393 records of synthetic drug information with 15 columns, designed for data science projects focusing on healthcare analytics, drug safety analysis, and pharmaceutical research. The dataset simulates real-world pharmaceutical data with appropriate variety and realistic constraints for machine learning applications."
+    "description": "This comprehensive pharmaceutical synthetic dataset contains 1,393 records of synthetic drug information with 15 columns, designed for data science projects focusing on healthcare analytics, drug safety analysis, and pharmaceutical research. The dataset simulates real-world pharmaceutical data with appropriate variety and realistic constraints for machine learning applications.",
+    "data_interpretation_notes":"• approval_year, dosage_mg, and price_usd are numeric fields.• expiry_date is a date.• side_effects is a comma-separated list stored as a single text field.• All other columns are categorical text; identifiers such as drug_name and batch_number have no numeric or ordinal meaning."
   },
   {
     "file_path": "data/mental_health_survey.csv",
@@ -33,6 +36,7 @@
     "source": "https://www.kaggle.com/datasets/osmi/mental-health-in-tech-survey",
     "created_at": "2026-04-13",
     "domain": "healthcare, mental health, psychiatry, survey research",
-    "description": "This dataset contains survey responses about mental health in the tech industry, including workplace factors, treatment history, and attitudes toward mental health."
+    "description": "This dataset contains survey responses about mental health in the tech industry, including workplace factors, treatment history, and attitudes toward mental health.",
+    "data_interpretation_notes":"• Text values have been normalized to lowercase.• Column names may include uppercase letters and should be matched case-sensitively.• Timestamp represents the time of survey submission and should be treated as metadata, not a feature category.• Age is numeric.• Gender contains cleaned categorical values and should be treated as a closed category, not free text.• Country is categorical.• State is categorical and may be missing (NaN).• self_employed is a categorical yes/no field and may be missing (NaN).• family_history and treatment are categorical yes/no fields.• work_interfere is categorical (e.g. rarely, sometimes, often).• no_employees is a categorical range encoded as a string (e.g. 1-5, 6-25, more than 1000) and should not be treated as numeric.• remote_work and tech_company are categorical yes/no fields.• benefits, care_options, wellness_program, seek_help, and anonymity are categorical fields with values like yes / no / don't know.• leave is an ordered categorical field (e.g. very easy → very difficult).• mental_health_consequence, phys_health_consequence, mental_health_interview, phys_health_interview, and mental_vs_physical are categorical fields with values such as yes / no / maybe / don't know.• coworkers and supervisor are categorical fields (e.g. yes / no / some of them).• obs_consequence is categorical yes/no.• comments is free-text and may be missing (NaN)."
   }
 ]
