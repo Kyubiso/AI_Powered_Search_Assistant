@@ -11,22 +11,23 @@
   ],
   "sample_rows": [
     {
-      "Drug 1": "Trioxsalen",
-      "Drug 2": "Verteporfin",
-      "Interaction Description": "Trioxsalen may increase the photosensitizing activities of Verteporfin."
+      "Drug 1": "trioxsalen",
+      "Drug 2": "verteporfin",
+      "Interaction Description": "trioxsalen may increase the photosensitizing activities of verteporfin."
     },
     {
-      "Drug 1": "Aminolevulinic acid",
-      "Drug 2": "Verteporfin",
-      "Interaction Description": "Aminolevulinic acid may increase the photosensitizing activities of Verteporfin."
+      "Drug 1": "aminolevulinic acid",
+      "Drug 2": "verteporfin",
+      "Interaction Description": "aminolevulinic acid may increase the photosensitizing activities of verteporfin."
     },
     {
-      "Drug 1": "Titanium dioxide",
-      "Drug 2": "Verteporfin",
-      "Interaction Description": "Titanium dioxide may increase the photosensitizing activities of Verteporfin."
+      "Drug 1": "titanium dioxide",
+      "Drug 2": "verteporfin",
+      "Interaction Description": "titanium dioxide may increase the photosensitizing activities of verteporfin."
     }
   ],
   "domain": "healthcare, pharmacology, drug-drug interaction analysis",
+  "data_interpretation_notes": "• Each record represents an interaction between two drugs.• Drug order does not change the meaning of the interaction.• Interaction Description is free text explaining the relationship.",
   "description": "This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs. It contains 191,541 rows and 3 columns in CSV format.",
-  "embedding_text": "Dataset: Drug-Drug Interactions Dataset. Source: https://www.kaggle.com/datasets/mghobashy/drug-drug-interactions?select=db_drug_interactions.csv. Domain: healthcare, pharmacology, drug-drug interaction analysis. Rows: 191541. Columns: 3. Description: This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs. Column preview: Drug 1, Drug 2, Interaction Description. Use this dataset for retrieval, metadata search, and question answering over local healthcare data."
+  "embedding_text": "Dataset: Drug-Drug Interactions Dataset. Source: https://www.kaggle.com/datasets/mghobashy/drug-drug-interactions?select=db_drug_interactions.csv. Domain: healthcare, pharmacology, drug-drug interaction analysis. Rows: 191541. Columns: 3. Description: This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs. Data interpretation notes: • Each record represents an interaction between two drugs.• Drug order does not change the meaning of the interaction.• Interaction Description is free text explaining the relationship. Column preview: Drug 1, Drug 2, Interaction Description. Use this dataset for retrieval, metadata search, and question answering over local healthcare data."
 }
