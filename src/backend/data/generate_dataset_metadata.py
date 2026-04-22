@@ -66,22 +66,25 @@ def filter_manifest(manifest: list[dict], dataset_filters: list[str] | None) -> 
 
 def build_metadata(entry: dict, sample_rows: int) -> dict:
     file_path = Path(entry["file_path"])
+    normalized_file_path = file_path.as_posix()
     df = pd.read_csv(file_path)
 
     dataset_name = entry.get("dataset_name") or file_path.stem
     source = entry.get("source", "")
     domain = entry.get("domain", "")
     manifest_description = entry.get("description", "").strip()
+    data_interpretation_notes = entry.get("data_interpretation_notes", "").strip()
 
     metadata = {
         "dataset_name": dataset_name,
         "source": source,
-        "file_path": str(file_path),
+        "file_path": normalized_file_path,
         "num_rows": int(len(df)),
         "num_columns": int(len(df.columns)),
         "columns": df.columns.tolist(),
         "sample_rows": df.head(sample_rows).to_dict(orient="records"),
         "domain": domain,
+        "data_interpretation_notes": data_interpretation_notes,
         "description": build_description(
             dataset_name=dataset_name,
             manifest_description=manifest_description,
@@ -93,6 +96,7 @@ def build_metadata(entry: dict, sample_rows: int) -> dict:
             source=source,
             domain=domain,
             manifest_description=manifest_description,
+            data_interpretation_notes=data_interpretation_notes,
             columns=df.columns.tolist(),
             num_rows=len(df),
             num_columns=len(df.columns),
@@ -122,6 +126,7 @@ def build_embedding_text(
     source: str,
     domain: str,
     manifest_description: str,
+    data_interpretation_notes: str,
     columns: list[str],
     num_rows: int,
     num_columns: int,
@@ -140,6 +145,9 @@ def build_embedding_text(
 
     if manifest_description:
         parts.append(f"Description: {manifest_description}")
+
+    if data_interpretation_notes:
+        parts.append(f"Data interpretation notes: {data_interpretation_notes}")
 
     parts.append(f"Column preview: {column_preview}.")
     parts.append(

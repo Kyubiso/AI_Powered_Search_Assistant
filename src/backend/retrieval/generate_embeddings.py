@@ -87,8 +87,20 @@ def load_metadata(metadata_path: Path) -> dict:
         return json.load(metadata_file)
 
 
-def build_document(metadata: dict) -> str:
-    return metadata["embedding_text"]
+def build_document(metadata: dict, manifest_entry: dict) -> str:
+    base_document = str(metadata.get("embedding_text", "")).strip()
+    metadata_notes = str(metadata.get("data_interpretation_notes", "")).strip()
+    manifest_notes = str(manifest_entry.get("data_interpretation_notes", "")).strip()
+    notes = metadata_notes or manifest_notes
+
+    if not notes:
+        return base_document
+
+    notes_section = f"Data interpretation notes: {notes}"
+    if notes_section in base_document:
+        return base_document
+
+    return f"{base_document} {notes_section}".strip()
 
 
 def build_record_id(metadata: dict) -> str:
@@ -98,13 +110,19 @@ def build_record_id(metadata: dict) -> str:
 def upsert_metadata(
     collection,
     metadata: dict,
+    manifest_entry: dict,
+    document: str,
     embedding: list[float],
 ) -> None:
     record_id = build_record_id(metadata)
+    metadata_notes = str(metadata.get("data_interpretation_notes", "")).strip()
+    manifest_notes = str(manifest_entry.get("data_interpretation_notes", "")).strip()
+    notes = metadata_notes or manifest_notes
+
     collection.upsert(
         ids=[record_id],
         embeddings=[embedding],
-        documents=[metadata["embedding_text"]],
+        documents=[document],
         metadatas=[
             {
                 "dataset_name": metadata["dataset_name"],
@@ -113,6 +131,7 @@ def upsert_metadata(
                 "domain": metadata.get("domain", ""),
                 "num_rows": metadata["num_rows"],
                 "num_columns": metadata["num_columns"],
+                "data_interpretation_notes": notes,
             }
         ],
     )
@@ -151,9 +170,9 @@ def main() -> int:
             print(f"Skipping existing embedding: {record_id}")
             continue
 
-        document = build_document(metadata)
+        document = build_document(metadata, entry)
         embedding = embed_text(model, document)
-        upsert_metadata(collection, metadata, embedding)
+        upsert_metadata(collection, metadata, entry, document, embedding)
         print(f"Embedded dataset: {metadata['dataset_name']}")
 
     return 0
