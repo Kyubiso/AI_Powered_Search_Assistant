@@ -44,12 +44,12 @@ Examples:
 - `metadata/Manifests/datasets_manifest.json` - curated dataset manifest
 - `metadata/datasets/` - generated metadata JSON files
 - `src/backend/data/generate_dataset_metadata.py` - metadata generation script
-- `src/backend/retrieval/generate_embeddings.py` - embedding generation script
+- `src/backend/data/generate_embeddings.py` - embedding generation script
 - `src/backend/retrieval/search_datasets.py` - semantic search script
 - `src/backend/data/build_duckdb.py` - import manifest-listed CSV files into DuckDB
 - `src/backend/inspection/query_duckdb.py` - run manual SQL queries in DuckDB
 - `src/backend/inspection/show_duckdb_schema.py` - inspect DuckDB tables and schema
-- `src/backend/sql/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
+- `src/backend/sql/prepare_sql_generation_context.py` - prepare compact or broad schema context for later SQL generation
 - `src/backend/sql/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
 - `src/backend/sql/validate_sql.py` - validate generated SQL before execution
 - `src/backend/sql/run_sql_query.py` - validate and execute approved SQL in read-only mode
@@ -112,14 +112,14 @@ python -m src.backend.data.generate_dataset_metadata --dataset "Drug-Drug Intera
 This reads the generated metadata, creates OpenAI embeddings, and stores them in ChromaDB.
 
 ```bash
-python -m src.backend.retrieval.generate_embeddings
+python -m src.backend.data.generate_embeddings
 ```
 
 Useful options:
 
 ```bash
-python -m src.backend.retrieval.generate_embeddings --force
-python -m src.backend.retrieval.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
+python -m src.backend.data.generate_embeddings --force
+python -m src.backend.data.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
 ```
 
 ### Step 3. Search datasets
@@ -172,9 +172,9 @@ python -m src.backend.inspection.show_duckdb_schema --dataset "Diseases and Symp
 This prepares the table and selected columns that will later be passed into the SQL-generation step.
 
 ```bash
-python -m src.backend.sql.prepare_sql_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_generation_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 ### Step 7. Generate SQL

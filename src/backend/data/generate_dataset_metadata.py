@@ -170,6 +170,23 @@ def validate_entry(entry: dict) -> None:
             raise ValueError(f"Manifest entry is missing required field: {field}")
 
 
+def generate_metadata_from_manifest_entries(
+    manifest: list[dict],
+    sample_rows: int,
+    force: bool,
+) -> None:
+    for entry in manifest:
+        validate_entry(entry)
+        metadata_path = Path(entry["metadata_path"])
+        if metadata_path.exists() and not force:
+            print(f"Skipping existing metadata: {entry['metadata_path']}")
+            continue
+
+        metadata = build_metadata(entry, sample_rows)
+        save_metadata(metadata, metadata_path)
+        print(f"Generated metadata: {entry['metadata_path']}")
+
+
 def main() -> int:
     args = parse_args()
     manifest = load_manifest(args.manifest)
@@ -179,16 +196,11 @@ def main() -> int:
         print("No matching datasets found in the manifest.")
         return 1
 
-    for entry in manifest:
-        validate_entry(entry)
-        metadata_path = Path(entry["metadata_path"])
-        if metadata_path.exists() and not args.force:
-            print(f"Skipping existing metadata: {entry['metadata_path']}")
-            continue
-
-        metadata = build_metadata(entry, args.sample_rows)
-        save_metadata(metadata, metadata_path)
-        print(f"Generated metadata: {entry['metadata_path']}")
+    generate_metadata_from_manifest_entries(
+        manifest=manifest,
+        sample_rows=args.sample_rows,
+        force=args.force,
+    )
 
     return 0
 

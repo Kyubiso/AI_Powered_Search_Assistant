@@ -145,6 +145,35 @@ def should_skip(collection, record_id: str, force: bool) -> bool:
     return bool(existing["ids"])
 
 
+def generate_embeddings_from_manifest_entries(
+    manifest: list[dict],
+    chroma_dir: Path,
+    collection_name: str,
+    model_name: str,
+    force: bool,
+) -> None:
+    model = get_embedding_model(model_name)
+    chroma_client = chromadb.PersistentClient(path=str(chroma_dir))
+    collection = chroma_client.get_or_create_collection(
+        name=collection_name,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    for entry in manifest:
+        metadata_path = Path(entry["metadata_path"])
+        metadata = load_metadata(metadata_path)
+        record_id = build_record_id(metadata)
+
+        if should_skip(collection, record_id, force):
+            print(f"Skipping existing embedding: {record_id}")
+            continue
+
+        document = build_document(metadata, entry)
+        embedding = embed_text(model, document)
+        upsert_metadata(collection, metadata, entry, document, embedding)
+        print(f"Embedded dataset: {metadata['dataset_name']}")
+
+
 def main() -> int:
     args = parse_args()
 
@@ -154,26 +183,13 @@ def main() -> int:
         print("No matching datasets found in the manifest.")
         return 1
 
-    model = get_embedding_model(args.model)
-    chroma_client = chromadb.PersistentClient(path=str(args.chroma_dir))
-    collection = chroma_client.get_or_create_collection(
-        name=args.collection,
-        metadata={"hnsw:space": "cosine"},
+    generate_embeddings_from_manifest_entries(
+        manifest=manifest,
+        chroma_dir=args.chroma_dir,
+        collection_name=args.collection,
+        model_name=args.model,
+        force=args.force,
     )
-
-    for entry in manifest:
-        metadata_path = Path(entry["metadata_path"])
-        metadata = load_metadata(metadata_path)
-        record_id = build_record_id(metadata)
-
-        if should_skip(collection, record_id, args.force):
-            print(f"Skipping existing embedding: {record_id}")
-            continue
-
-        document = build_document(metadata, entry)
-        embedding = embed_text(model, document)
-        upsert_metadata(collection, metadata, entry, document, embedding)
-        print(f"Embedded dataset: {metadata['dataset_name']}")
 
     return 0
 

@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def prepare_sql_context(
+def prepare_sql_generation_context(
     question: str,
     db_path: Path,
     manifest_path: Path,
@@ -90,7 +90,7 @@ def prepare_sql_context(
 
 def main() -> int:
     args = parse_args()
-    output = prepare_sql_context(
+    output = prepare_sql_generation_context(
         question=args.question,
         db_path=args.db_path,
         manifest_path=args.manifest,

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import duckdb
 
-from src.backend.sql.prepare_sql_context import prepare_sql_context
+from src.backend.sql.prepare_sql_generation_context import prepare_sql_generation_context
 from src.backend.sql.sql_context_utils import (
     DEFAULT_DATABASE,
     DEFAULT_MANIFEST,
@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--context-file",
         type=Path,
-        help="Optional JSON file produced by prepare_sql_context.py.",
+        help="Optional JSON file produced by prepare_sql_generation_context.py.",
     )
     parser.add_argument(
         "--db-path",
@@ -127,6 +127,15 @@ def build_system_prompt() -> str:
         "or top N results. "
         "You may keep or override the suggested mode if the schema and question imply a better mode. "
         "You may choose a non-primary candidate when its schema and description fit the question better. "
+        "Consider both row filtering and column selection together. "
+        "Use WHERE, GROUP BY, HAVING, ORDER BY, and SELECT columns deliberately based on the user's request. "
+        "When the user asks for one or a few specific fields, return only those fields instead of SELECT *. "
+        "Use SELECT * only when the request is clearly asking for a full record, full profile, all columns, "
+        "or when the final mode is not focused_filter and broad output is necessary. "
+        "For focused_filter mode, prefer a narrow projection and avoid SELECT * unless the question explicitly "
+        "asks for the complete row or full profile. "
+        "Treat dataset-specific data interpretation notes as binding guidance for how values should be matched "
+        "and interpreted in SQL. "
         "If the question asks for all symptoms or a full profile, include the relevant "
         "identifier column and retrieve the full matching row or columns from the single table. "
         "If the query mode is broad_aggregate, aggregate across the broad column set rather than "
@@ -154,6 +163,7 @@ def build_user_prompt(context: dict) -> str:
                     f"- Source: {candidate.get('source', '')}",
                     f"- Retrieval distance: {candidate.get('distance', '')}",
                     f"- Description: {candidate.get('description', '')}",
+                    f"- Data interpretation notes: {candidate.get('data_interpretation_notes', '')}",
                     f"- Suggested mode: {candidate['query_mode']}",
                     f"- Full column count: {candidate['column_count']}",
                     "- Available columns:",
@@ -183,6 +193,10 @@ def build_user_prompt(context: dict) -> str:
             "- Use only one candidate dataset and only that candidate's table and columns.",
             '- Always use double quotes around table names and column names, for example: SELECT "treatment" FROM "mental_health_survey".',
             "- Decide whether the suggested candidate and suggested mode are correct. You may keep them or replace them with a better candidate and final mode.",
+            "- Solve both parts of the request: which rows should match, and which columns should be returned.",
+            "- If the user asks for a specific field such as side effects, warnings, treatment, country, or one aggregate, return only that field or those fields unless the question explicitly asks for the full record.",
+            "- In focused_filter mode, avoid SELECT * unless the user explicitly asks for all information, a full profile, or all columns.",
+            "- If data interpretation notes describe special matching behavior, follow them. For example, if a field combines a name with a dose, prefer matching the name appropriately rather than requiring an exact full-value match unless the user supplied the exact full value.",
             "- Return all necessary matching rows by default. Use LIMIT only when the user explicitly asks for a preview, sample, first N rows, or top N results.",
             "- Do not silently truncate healthcare-relevant results.",
             "- For aggregate questions, use COUNT, AVG, MIN, MAX, SUM, or GROUP BY only when appropriate.",
@@ -296,7 +310,7 @@ def prepare_context_from_args(args: argparse.Namespace) -> dict:
     if not args.question:
         raise ValueError("Question is required unless --context-file is provided.")
 
-    return prepare_sql_context(
+    return prepare_sql_generation_context(
         question=args.question,
         db_path=args.db_path,
         manifest_path=args.manifest,

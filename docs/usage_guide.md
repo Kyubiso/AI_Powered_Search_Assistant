@@ -73,7 +73,7 @@ Command:
 
 ```bash
 source ~/.zshrc
-python -m src.backend.retrieval.generate_embeddings
+python -m src.backend.data.generate_embeddings
 ```
 
 What happens:
@@ -138,9 +138,9 @@ What happens:
 Commands:
 
 ```bash
-python -m src.backend.sql.prepare_sql_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_generation_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 What happens:
@@ -268,14 +268,14 @@ Rebuild embeddings for everything:
 
 ```bash
 source ~/.zshrc
-python -m src.backend.retrieval.generate_embeddings --force
+python -m src.backend.data.generate_embeddings --force
 ```
 
 Rebuild embeddings for one dataset:
 
 ```bash
 source ~/.zshrc
-python -m src.backend.retrieval.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
+python -m src.backend.data.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
 ```
 
 Search examples:
@@ -303,8 +303,8 @@ python -m src.backend.inspection.show_duckdb_schema --dataset "Drug Labels and S
 Prepare SQL context:
 
 ```bash
-python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_generation_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 Generate SQL:

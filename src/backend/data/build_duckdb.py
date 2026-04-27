@@ -135,17 +135,13 @@ def import_dataset(
     return f"Imported dataset into table: {table_name}"
 
 
-def main() -> int:
-    args = parse_args()
-    manifest = load_manifest(args.manifest)
-    manifest = filter_manifest(manifest, args.datasets)
-
-    if not manifest:
-        print("No matching datasets found in the manifest.")
-        return 1
-
-    args.db_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = duckdb.connect(str(args.db_path))
+def build_duckdb_from_manifest_entries(
+    manifest: list[dict],
+    db_path: Path,
+    force: bool,
+) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = duckdb.connect(str(db_path))
 
     try:
         for entry in manifest:
@@ -159,11 +155,27 @@ def main() -> int:
                 connection=connection,
                 csv_path=csv_path,
                 table_name=table_name,
-                force=args.force,
+                force=force,
             )
             print(message)
     finally:
         connection.close()
+
+
+def main() -> int:
+    args = parse_args()
+    manifest = load_manifest(args.manifest)
+    manifest = filter_manifest(manifest, args.datasets)
+
+    if not manifest:
+        print("No matching datasets found in the manifest.")
+        return 1
+
+    build_duckdb_from_manifest_entries(
+        manifest=manifest,
+        db_path=args.db_path,
+        force=args.force,
+    )
 
     return 0
 

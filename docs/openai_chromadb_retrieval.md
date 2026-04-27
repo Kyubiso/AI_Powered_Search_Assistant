@@ -10,7 +10,7 @@ These utilities create the first retrieval layer of the project:
 
 Scripts:
 
-- `src/backend/retrieval/generate_embeddings.py`
+- `src/backend/data/generate_embeddings.py`
 - `src/backend/retrieval/search_datasets.py`
 
 ## Model choice
@@ -57,7 +57,7 @@ export OPENAI_API_KEY="your_api_key_here"
 
 Script:
 
-- `src/backend/retrieval/generate_embeddings.py`
+- `src/backend/data/generate_embeddings.py`
 
 What it does:
 
@@ -79,9 +79,9 @@ Optional behavior:
 Examples:
 
 ```bash
-python -m src.backend.retrieval.generate_embeddings
-python -m src.backend.retrieval.generate_embeddings --force
-python -m src.backend.retrieval.generate_embeddings --dataset "Drug-Drug Interactions Dataset" --force
+python -m src.backend.data.generate_embeddings
+python -m src.backend.data.generate_embeddings --force
+python -m src.backend.data.generate_embeddings --dataset "Drug-Drug Interactions Dataset" --force
 ```
 
 ## Search

@@ -174,7 +174,7 @@ The exact structure can still be adjusted, but this phase should likely introduc
 
 - `utilities/build_duckdb.py`
 - `utilities/query_duckdb.py`
-- `utilities/retrieve_sql_context.py`
+- `utilities/retrieve_dataset_candidates.py`
 - `utilities/show_duckdb_schema.py`
 - `utilities/generate_sql.py`
 - `utilities/validate_sql.py`

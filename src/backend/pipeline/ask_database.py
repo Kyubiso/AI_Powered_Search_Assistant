@@ -2,13 +2,14 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import time
 
 if __package__ in (None, ""):
     project_root = Path(__file__).resolve().parents[3]
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-from src.backend.retrieval.retrieve_sql_context import (
+from src.backend.retrieval.retrieve_dataset_candidates import (
     DEFAULT_CHROMA_DIR,
     DEFAULT_COLLECTION,
     DEFAULT_EMBEDDING_MODEL,
@@ -18,8 +19,16 @@ from src.backend.retrieval.retrieve_sql_context import (
     load_manifest,
     retrieve_datasets,
 )
+from src.backend.pipeline.metrics_utils import (
+    DEFAULT_METRICS_LOG,
+    append_query_metrics,
+    build_query_metrics,
+    elapsed_ms,
+)
 from src.backend.sql.generate_sql import DEFAULT_MODEL, generate_sql_payload
-from src.backend.sql.prepare_sql_context import prepare_sql_context
+from src.backend.sql.prepare_sql_generation_context import (
+    prepare_sql_generation_context,
+)
 from src.backend.sql.run_sql_query import execute_query
 from src.backend.sql.sql_context_utils import DEFAULT_TOP_COLUMNS
 from src.backend.sql.sql_validation_utils import validate_sql_query
@@ -88,6 +97,12 @@ def parse_args() -> argparse.Namespace:
         default=20,
         help="Maximum number of rows to return from execution. Default: 20",
     )
+    parser.add_argument(
+        "--metrics-log",
+        type=Path,
+        default=DEFAULT_METRICS_LOG,
+        help=f"Path to the metrics JSONL log. Default: {DEFAULT_METRICS_LOG}",
+    )
     return parser.parse_args()
 
 
@@ -110,7 +125,7 @@ def build_sql_candidate_contexts(
 
     candidates = []
     for index, item in enumerate(retrieved_with_context[:candidate_count]):
-        prepared = prepare_sql_context(
+        prepared = prepare_sql_generation_context(
             question=question,
             db_path=db_path,
             manifest_path=manifest_path,
@@ -123,6 +138,7 @@ def build_sql_candidate_contexts(
                 "dataset_name": item.get("dataset_name"),
                 "table_name": item.get("table_name"),
                 "description": item.get("description", ""),
+                "data_interpretation_notes": item.get("data_interpretation_notes", ""),
                 "source": item.get("source"),
                 "distance": item.get("distance"),
                 "query_mode": prepared["query_mode"],
@@ -167,6 +183,7 @@ def build_pipeline_output(
     generated_payload: dict,
     validation: dict,
     execution: dict,
+    metrics: dict,
 ) -> dict:
     return {
         "question": question,
@@ -189,41 +206,120 @@ def build_pipeline_output(
         "generated_sql": generated_payload["generated_query"],
         "validation": validation,
         "execution": execution,
+        "metrics": metrics,
     }
 
 
 def main() -> int:
     args = parse_args()
-    manifest = load_manifest(args.manifest)
+    total_start = time.perf_counter()
+    stage_timings_ms: dict[str, float] = {}
+    sql_context = None
+    generated_payload = None
+    validation = None
+    execution = None
+    selected_dataset = None
+    retrieved_with_context: list[dict] = []
 
-    retrieved = retrieve_datasets(
-        query=args.question,
-        chroma_dir=args.chroma_dir,
-        collection_name=args.collection,
-        model=args.retrieval_model,
-        top_k=args.retrieval_top_k,
-    )
-    retrieved_with_context = enrich_with_duckdb_context(retrieved, manifest, args.db_path)
-    sql_context = build_sql_candidate_contexts(
-        question=args.question,
-        retrieved_with_context=retrieved_with_context,
-        db_path=args.db_path,
-        manifest_path=args.manifest,
-        top_columns=args.top_columns,
-    )
-    generated_payload = generate_sql_payload(
-        model=args.sql_model,
-        context=sql_context,
-        db_path=args.db_path,
-    )
-    selected_dataset = resolve_selected_dataset(retrieved_with_context, generated_payload)
+    try:
+        manifest = load_manifest(args.manifest)
 
-    validation = validate_sql_query(
-        sql=generated_payload["generated_query"]["sql"],
-        db_path=args.db_path,
-        expected_table=generated_payload["generated_query"]["table_name"],
-    )
-    if not validation["is_valid"]:
+        stage_start = time.perf_counter()
+        retrieved = retrieve_datasets(
+            query=args.question,
+            chroma_dir=args.chroma_dir,
+            collection_name=args.collection,
+            model=args.retrieval_model,
+            top_k=args.retrieval_top_k,
+        )
+        stage_timings_ms["retrieval"] = elapsed_ms(stage_start, time.perf_counter())
+
+        stage_start = time.perf_counter()
+        retrieved_with_context = enrich_with_duckdb_context(retrieved, manifest, args.db_path)
+        stage_timings_ms["context_enrichment"] = elapsed_ms(
+            stage_start, time.perf_counter()
+        )
+
+        stage_start = time.perf_counter()
+        sql_context = build_sql_candidate_contexts(
+            question=args.question,
+            retrieved_with_context=retrieved_with_context,
+            db_path=args.db_path,
+            manifest_path=args.manifest,
+            top_columns=args.top_columns,
+        )
+        stage_timings_ms["sql_context_preparation"] = elapsed_ms(
+            stage_start, time.perf_counter()
+        )
+
+        stage_start = time.perf_counter()
+        generated_payload = generate_sql_payload(
+            model=args.sql_model,
+            context=sql_context,
+            db_path=args.db_path,
+        )
+        stage_timings_ms["sql_generation"] = elapsed_ms(
+            stage_start, time.perf_counter()
+        )
+
+        selected_dataset = resolve_selected_dataset(retrieved_with_context, generated_payload)
+
+        stage_start = time.perf_counter()
+        validation = validate_sql_query(
+            sql=generated_payload["generated_query"]["sql"],
+            db_path=args.db_path,
+            expected_table=generated_payload["generated_query"]["table_name"],
+        )
+        stage_timings_ms["sql_validation"] = elapsed_ms(
+            stage_start, time.perf_counter()
+        )
+
+        total_elapsed = elapsed_ms(total_start, time.perf_counter())
+        if not validation["is_valid"]:
+            metrics = build_query_metrics(
+                question=args.question,
+                sql_context=sql_context,
+                generated_payload=generated_payload,
+                validation=validation,
+                execution=None,
+                stage_timings_ms=stage_timings_ms,
+                total_elapsed_ms=total_elapsed,
+                status="validation_failed",
+            )
+            append_query_metrics(args.metrics_log, metrics)
+            output = build_pipeline_output(
+                question=args.question,
+                retrieved_candidates=retrieved_with_context,
+                selected_dataset=selected_dataset,
+                sql_context=sql_context,
+                generated_payload=generated_payload,
+                validation=validation,
+                execution=None,
+                metrics=metrics,
+            )
+            print(json.dumps(output, indent=2, ensure_ascii=False, default=str))
+            return 1
+
+        stage_start = time.perf_counter()
+        execution = execute_query(
+            db_path=args.db_path,
+            sql=validation["normalized_sql"],
+            limit=args.limit,
+        )
+        stage_timings_ms["sql_execution"] = elapsed_ms(stage_start, time.perf_counter())
+
+        total_elapsed = elapsed_ms(total_start, time.perf_counter())
+        metrics = build_query_metrics(
+            question=args.question,
+            sql_context=sql_context,
+            generated_payload=generated_payload,
+            validation=validation,
+            execution=execution,
+            stage_timings_ms=stage_timings_ms,
+            total_elapsed_ms=total_elapsed,
+            status="executed",
+        )
+        append_query_metrics(args.metrics_log, metrics)
         output = build_pipeline_output(
             question=args.question,
             retrieved_candidates=retrieved_with_context,
@@ -231,27 +327,27 @@ def main() -> int:
             sql_context=sql_context,
             generated_payload=generated_payload,
             validation=validation,
-            execution=None,
+            execution=execution,
+            metrics=metrics,
         )
         print(json.dumps(output, indent=2, ensure_ascii=False, default=str))
+        return 0
+    except Exception as exc:
+        total_elapsed = elapsed_ms(total_start, time.perf_counter())
+        metrics = build_query_metrics(
+            question=args.question,
+            sql_context=sql_context,
+            generated_payload=generated_payload,
+            validation=validation,
+            execution=execution,
+            stage_timings_ms=stage_timings_ms,
+            total_elapsed_ms=total_elapsed,
+            status="error",
+            error_message=str(exc),
+        )
+        append_query_metrics(args.metrics_log, metrics)
+        print(str(exc), file=sys.stderr)
         return 1
-
-    execution = execute_query(
-        db_path=args.db_path,
-        sql=validation["normalized_sql"],
-        limit=args.limit,
-    )
-    output = build_pipeline_output(
-        question=args.question,
-        retrieved_candidates=retrieved_with_context,
-        selected_dataset=selected_dataset,
-        sql_context=sql_context,
-        generated_payload=generated_payload,
-        validation=validation,
-        execution=execution,
-    )
-    print(json.dumps(output, indent=2, ensure_ascii=False, default=str))
-    return 0
 
 
 if __name__ == "__main__":
