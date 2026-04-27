@@ -90,7 +90,7 @@ Return:
 
 ## Retrieval Scripts
 
-### `src/backend/retrieval/generate_embeddings.py`
+### `src/backend/data/generate_embeddings.py`
 
 Purpose:
 - generate OpenAI embeddings from metadata and store them in ChromaDB
@@ -372,7 +372,7 @@ Return:
 If you only want the main current flow:
 
 1. `python -m src.backend.data.generate_dataset_metadata`
-2. `python -m src.backend.retrieval.generate_embeddings`
+2. `python -m src.backend.data.generate_embeddings`
 3. `python -m src.backend.data.build_duckdb`
 4. `python -m src.backend.pipeline.ask_database "..."`
 

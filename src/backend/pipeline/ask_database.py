@@ -138,6 +138,7 @@ def build_sql_candidate_contexts(
                 "dataset_name": item.get("dataset_name"),
                 "table_name": item.get("table_name"),
                 "description": item.get("description", ""),
+                "data_interpretation_notes": item.get("data_interpretation_notes", ""),
                 "source": item.get("source"),
                 "distance": item.get("distance"),
                 "query_mode": prepared["query_mode"],

@@ -43,7 +43,7 @@ Package files added:
 
 - `utilities/search_datasets.py` -> `src/backend/retrieval/search_datasets.py`
 - `utilities/retrieve_sql_context.py` -> `src/backend/retrieval/retrieve_dataset_candidates.py`
-- `utilities/generate_embeddings.py` -> `src/backend/retrieval/generate_embeddings.py`
+- `utilities/generate_embeddings.py` -> `src/backend/data/generate_embeddings.py`
 
 ### SQL
 

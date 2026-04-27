@@ -17,7 +17,7 @@
     "created_at": "2026-03-20",
     "domain": "healthcare, pharmacology, drug-drug interaction analysis",
     "description": "This dataset provides a comprehensive collection of drug-drug interactions (DDIs) intended for research in predicting and understanding complex interaction relationships between drugs. It is sourced from the Drug Bank database and is designed to support multi-task learning approaches in the domain of bioinformatics and pharmacology. Feature Details: Drug 1: Name of the first drug in the interaction. Drug 2: Name of the second drug in the interaction. Interaction Description: Detailed description of the interaction between the two drugs.",
-    "data_interpretation_notes":"• Each record represents an interaction between two drugs.• Drug order does not change the meaning of the interaction.• Interaction Description is free text explaining the relationship."
+    "data_interpretation_notes":"• Each record represents an interaction between two drugs.• Drug can be search either in Drug1 or Drug2 column. It does not change the meaning of the interaction.• Interaction Description is free text explaining the relationship."
   },
   {
     "file_path": "data/realistic_drug_labels_side_effects.csv",
@@ -27,7 +27,7 @@
     "created_at": "2026-03-20",
     "domain": "healthcare, pharmaceutical safety, drug label and adverse effect analysis",
     "description": "This comprehensive pharmaceutical synthetic dataset contains 1,393 records of synthetic drug information with 15 columns, designed for data science projects focusing on healthcare analytics, drug safety analysis, and pharmaceutical research. The dataset simulates real-world pharmaceutical data with appropriate variety and realistic constraints for machine learning applications.",
-    "data_interpretation_notes":"• approval_year, dosage_mg, and price_usd are numeric fields.• expiry_date is a date.• side_effects is a comma-separated list stored as a single text field.• All other columns are categorical text; identifiers such as drug_name and batch_number have no numeric or ordinal meaning."
+    "data_interpretation_notes":"• drug_name are the name and the dose (eg. seroxetine50) to search by drug name use WHERE drug_name LIKE name. approval_year, dosage_mg, and price_usd are numeric fields.• expiry_date is a date.• side_effects is a comma-separated list stored as a single text field.• All other columns are categorical text; identifiers such as drug_name and batch_number have no numeric or ordinal meaning."
   },
   {
     "file_path": "data/mental_health_survey.csv",

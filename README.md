@@ -44,7 +44,7 @@ Examples:
 - `metadata/Manifests/datasets_manifest.json` - curated dataset manifest
 - `metadata/datasets/` - generated metadata JSON files
 - `src/backend/data/generate_dataset_metadata.py` - metadata generation script
-- `src/backend/retrieval/generate_embeddings.py` - embedding generation script
+- `src/backend/data/generate_embeddings.py` - embedding generation script
 - `src/backend/retrieval/search_datasets.py` - semantic search script
 - `src/backend/data/build_duckdb.py` - import manifest-listed CSV files into DuckDB
 - `src/backend/inspection/query_duckdb.py` - run manual SQL queries in DuckDB
@@ -112,14 +112,14 @@ python -m src.backend.data.generate_dataset_metadata --dataset "Drug-Drug Intera
 This reads the generated metadata, creates OpenAI embeddings, and stores them in ChromaDB.
 
 ```bash
-python -m src.backend.retrieval.generate_embeddings
+python -m src.backend.data.generate_embeddings
 ```
 
 Useful options:
 
 ```bash
-python -m src.backend.retrieval.generate_embeddings --force
-python -m src.backend.retrieval.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
+python -m src.backend.data.generate_embeddings --force
+python -m src.backend.data.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
 ```
 
 ### Step 3. Search datasets

@@ -73,7 +73,7 @@ Command:
 
 ```bash
 source ~/.zshrc
-python -m src.backend.retrieval.generate_embeddings
+python -m src.backend.data.generate_embeddings
 ```
 
 What happens:
@@ -268,14 +268,14 @@ Rebuild embeddings for everything:
 
 ```bash
 source ~/.zshrc
-python -m src.backend.retrieval.generate_embeddings --force
+python -m src.backend.data.generate_embeddings --force
 ```
 
 Rebuild embeddings for one dataset:
 
 ```bash
 source ~/.zshrc
-python -m src.backend.retrieval.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
+python -m src.backend.data.generate_embeddings --dataset "Drug Labels and Side Effects Dataset" --force
 ```
 
 Search examples:
