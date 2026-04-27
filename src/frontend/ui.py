@@ -34,6 +34,8 @@ class AgentApp(ctk.CTk):
         self.sql_box_visible = False
         self.sql_details_visible = False
         self.current_sql_details = ""
+        self.metrics_window = None
+        self.metrics_text_box = None
 
         # Spinner state
         self._spinner_running = False
@@ -95,14 +97,28 @@ class AgentApp(ctk.CTk):
 
         self.input_box.bind("<Control-Return>", lambda _: self.run_agents())
 
+        button_row = ctk.CTkFrame(self, fg_color="transparent")
+        button_row.pack(pady=16)
+
         self.ask_button = ctk.CTkButton(
-            self,
+            button_row,
             text="Ask",
             height=40,
             font=("Segoe UI", 14, "bold"),
             command=self.run_agents,
         )
-        self.ask_button.pack(pady=16)
+        self.ask_button.pack(side="left", padx=(0, 12))
+
+        self.metrics_button = ctk.CTkButton(
+            button_row,
+            text="Show Metrics",
+            height=40,
+            font=("Segoe UI", 14, "bold"),
+            fg_color=("#0f766e", "#115e59"),
+            hover_color=("#0d9488", "#134e4a"),
+            command=self.show_metrics_window,
+        )
+        self.metrics_button.pack(side="left")
 
         self.loading_label = ctk.CTkLabel(
             self,
@@ -287,6 +303,27 @@ class AgentApp(ctk.CTk):
             "sql_details": "\n".join(sql_lines).strip(),
         }
 
+    def _load_metrics_report(self) -> tuple[str, bool]:
+        project_root = Path(__file__).resolve().parents[2]
+        completed = subprocess.run(
+            [sys.executable, "-m", "src.backend.pipeline.report_metrics"],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+            check=False,
+        )
+
+        if completed.returncode != 0:
+            message = completed.stderr.strip() or "Failed to load aggregated metrics."
+            return message, False
+
+        try:
+            payload = json.loads(completed.stdout)
+        except json.JSONDecodeError:
+            return "Aggregated metrics report returned invalid JSON.", False
+
+        return json.dumps(payload, indent=2, ensure_ascii=False), True
+
     # --------------------------------------------------
     # Core logic
     # --------------------------------------------------
@@ -322,6 +359,7 @@ class AgentApp(ctk.CTk):
         state = "disabled" if loading else "normal"
 
         self.ask_button.configure(state=state)
+        self.metrics_button.configure(state=state)
         self.input_box.configure(state=state)
 
         if loading:
@@ -391,6 +429,65 @@ class AgentApp(ctk.CTk):
         self.sql_box.pack(after=self.sql_button, fill="x", padx=(60, 140), pady=(0, 10))
         self.sql_button.configure(text="Hide SQL Query")
         self.sql_details_visible = True
+
+    def show_metrics_window(self):
+        if self.metrics_window is not None and self.metrics_window.winfo_exists():
+            self.metrics_window.deiconify()
+            self.metrics_window.lift()
+            self.metrics_window.focus()
+            self.refresh_metrics_window()
+            return
+
+        self.metrics_window = ctk.CTkToplevel(self)
+        self.metrics_window.title("Aggregated Metrics")
+        self.metrics_window.geometry("820x560")
+        self.metrics_window.minsize(640, 420)
+        self.metrics_window.protocol("WM_DELETE_WINDOW", self._close_metrics_window)
+
+        header = ctk.CTkFrame(self.metrics_window, fg_color="transparent")
+        header.pack(fill="x", padx=14, pady=(14, 8))
+
+        ctk.CTkLabel(
+            header,
+            text="Aggregated Metrics",
+            font=("Segoe UI", 20, "bold"),
+            text_color=("#0f766e", "#5eead4"),
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            header,
+            text="Refresh",
+            width=110,
+            command=self.refresh_metrics_window,
+        ).pack(side="right")
+
+        self.metrics_text_box = ctk.CTkTextbox(
+            self.metrics_window,
+            font=("Consolas", 12),
+            wrap="none",
+        )
+        self.metrics_text_box.pack(fill="both", expand=True, padx=14, pady=(0, 14))
+        self.refresh_metrics_window()
+
+    def refresh_metrics_window(self):
+        if self.metrics_text_box is None:
+            return
+
+        metrics_text, success = self._load_metrics_report()
+        self.metrics_text_box.configure(state="normal")
+        self.metrics_text_box.delete("1.0", "end")
+        self.metrics_text_box.insert("1.0", metrics_text)
+        self.metrics_text_box.configure(state="disabled")
+
+        if self.metrics_window is not None and self.metrics_window.winfo_exists():
+            title = "Aggregated Metrics" if success else "Aggregated Metrics (Error)"
+            self.metrics_window.title(title)
+
+    def _close_metrics_window(self):
+        if self.metrics_window is not None and self.metrics_window.winfo_exists():
+            self.metrics_window.destroy()
+        self.metrics_window = None
+        self.metrics_text_box = None
 
     def _autosize_columns(self, rows, headings, max_width=420, min_width=100):
         measure = tkfont.Font(font=("Segoe UI", 13)).measure
