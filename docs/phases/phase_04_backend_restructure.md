@@ -42,12 +42,12 @@ Package files added:
 ### Retrieval
 
 - `utilities/search_datasets.py` -> `src/backend/retrieval/search_datasets.py`
-- `utilities/retrieve_sql_context.py` -> `src/backend/retrieval/retrieve_sql_context.py`
+- `utilities/retrieve_sql_context.py` -> `src/backend/retrieval/retrieve_dataset_candidates.py`
 - `utilities/generate_embeddings.py` -> `src/backend/retrieval/generate_embeddings.py`
 
 ### SQL
 
-- `utilities/prepare_sql_context.py` -> `src/backend/sql/prepare_sql_context.py`
+- `utilities/prepare_sql_context.py` -> `src/backend/sql/prepare_sql_generation_context.py`
 - `utilities/generate_sql.py` -> `src/backend/sql/generate_sql.py`
 - `utilities/validate_sql.py` -> `src/backend/sql/validate_sql.py`
 - `utilities/run_sql_query.py` -> `src/backend/sql/run_sql_query.py`

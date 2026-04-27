@@ -8,7 +8,7 @@ if __package__ in (None, ""):
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-from src.backend.retrieval.retrieve_sql_context import (
+from src.backend.retrieval.retrieve_dataset_candidates import (
     DEFAULT_CHROMA_DIR,
     DEFAULT_COLLECTION,
     DEFAULT_EMBEDDING_MODEL,
@@ -19,7 +19,9 @@ from src.backend.retrieval.retrieve_sql_context import (
     retrieve_datasets,
 )
 from src.backend.sql.generate_sql import DEFAULT_MODEL, generate_sql_payload
-from src.backend.sql.prepare_sql_context import prepare_sql_context
+from src.backend.sql.prepare_sql_generation_context import (
+    prepare_sql_generation_context,
+)
 from src.backend.sql.run_sql_query import execute_query
 from src.backend.sql.sql_context_utils import DEFAULT_TOP_COLUMNS
 from src.backend.sql.sql_validation_utils import validate_sql_query
@@ -110,7 +112,7 @@ def build_sql_candidate_contexts(
 
     candidates = []
     for index, item in enumerate(retrieved_with_context[:candidate_count]):
-        prepared = prepare_sql_context(
+        prepared = prepare_sql_generation_context(
             question=question,
             db_path=db_path,
             manifest_path=manifest_path,

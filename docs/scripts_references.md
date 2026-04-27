@@ -128,7 +128,7 @@ Role:
 Return:
 - prints JSON array of retrieved dataset matches
 
-### `src/backend/retrieval/retrieve_sql_context.py`
+### `src/backend/retrieval/retrieve_dataset_candidates.py`
 
 Purpose:
 - retrieve top-k datasets and enrich them with DuckDB table/schema context
@@ -153,7 +153,7 @@ Return:
 
 ## SQL Scripts
 
-### `src/backend/sql/prepare_sql_context.py`
+### `src/backend/sql/prepare_sql_generation_context.py`
 
 Purpose:
 - classify question type and select schema context for SQL generation
@@ -380,7 +380,7 @@ If you want detailed debugging, additionally use:
 
 1. `python -m src.backend.retrieval.search_datasets "..."`
 2. `python -m src.backend.inspection.show_duckdb_schema ...`
-3. `python -m src.backend.sql.prepare_sql_context "..."`
+3. `python -m src.backend.sql.prepare_sql_generation_context "..."`
 4. `python -m src.backend.sql.generate_sql "..."`
 5. `python -m src.backend.sql.validate_sql "..."`
 6. `python -m src.backend.sql.run_sql_query "..."`

@@ -35,7 +35,7 @@ This means some backend modules intentionally support both older single-context 
 ## Files Changed
 
 - `src/backend/pipeline/ask_database.py`
-- `src/backend/retrieval/retrieve_sql_context.py`
+- `src/backend/retrieval/retrieve_dataset_candidates.py`
 - `src/backend/sql/generate_sql.py`
 
 ## Result

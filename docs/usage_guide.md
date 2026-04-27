@@ -138,9 +138,9 @@ What happens:
 Commands:
 
 ```bash
-python -m src.backend.sql.prepare_sql_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_generation_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 What happens:
@@ -303,8 +303,8 @@ python -m src.backend.inspection.show_duckdb_schema --dataset "Drug Labels and S
 Prepare SQL context:
 
 ```bash
-python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_generation_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 Generate SQL:

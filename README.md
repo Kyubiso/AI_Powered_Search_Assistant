@@ -49,7 +49,7 @@ Examples:
 - `src/backend/data/build_duckdb.py` - import manifest-listed CSV files into DuckDB
 - `src/backend/inspection/query_duckdb.py` - run manual SQL queries in DuckDB
 - `src/backend/inspection/show_duckdb_schema.py` - inspect DuckDB tables and schema
-- `src/backend/sql/prepare_sql_context.py` - prepare compact or broad schema context for later SQL generation
+- `src/backend/sql/prepare_sql_generation_context.py` - prepare compact or broad schema context for later SQL generation
 - `src/backend/sql/generate_sql.py` - generate a candidate read-only SQL query with OpenAI
 - `src/backend/sql/validate_sql.py` - validate generated SQL before execution
 - `src/backend/sql/run_sql_query.py` - validate and execute approved SQL in read-only mode
@@ -172,9 +172,9 @@ python -m src.backend.inspection.show_duckdb_schema --dataset "Diseases and Symp
 This prepares the table and selected columns that will later be passed into the SQL-generation step.
 
 ```bash
-python -m src.backend.sql.prepare_sql_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
-python -m src.backend.sql.prepare_sql_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
-python -m src.backend.sql.prepare_sql_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Which diseases have fever and cough?" --dataset "Diseases and Symptoms Dataset" --top-columns 8
+python -m src.backend.sql.prepare_sql_generation_context "Show all symptoms of influenza" --dataset "Diseases and Symptoms Dataset"
+python -m src.backend.sql.prepare_sql_generation_context "How many respondents received treatment?" --dataset "Mental Health Survey" --top-columns 8
 ```
 
 ### Step 7. Generate SQL

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import duckdb
 
-from src.backend.sql.prepare_sql_context import prepare_sql_context
+from src.backend.sql.prepare_sql_generation_context import prepare_sql_generation_context
 from src.backend.sql.sql_context_utils import (
     DEFAULT_DATABASE,
     DEFAULT_MANIFEST,
@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--context-file",
         type=Path,
-        help="Optional JSON file produced by prepare_sql_context.py.",
+        help="Optional JSON file produced by prepare_sql_generation_context.py.",
     )
     parser.add_argument(
         "--db-path",
@@ -296,7 +296,7 @@ def prepare_context_from_args(args: argparse.Namespace) -> dict:
     if not args.question:
         raise ValueError("Question is required unless --context-file is provided.")
 
-    return prepare_sql_context(
+    return prepare_sql_generation_context(
         question=args.question,
         db_path=args.db_path,
         manifest_path=args.manifest,
