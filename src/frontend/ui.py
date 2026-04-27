@@ -221,12 +221,6 @@ class AgentApp(ctk.CTk):
             check=False,
         )
 
-        if completed.returncode != 0:
-            return {
-                "text": completed.stderr.strip() or "Failed to run ask_database.",
-                "table": None,
-            }
-
         if completed.stdout:
             sys.stdout.write(completed.stdout)
             sys.stdout.flush()
@@ -234,6 +228,11 @@ class AgentApp(ctk.CTk):
         try:
             payload = json.loads(completed.stdout)
         except json.JSONDecodeError:
+            if completed.returncode != 0:
+                return {
+                    "text": completed.stderr.strip() or "Failed to run ask_database.",
+                    "table": None,
+                }
             return {"text": "ask_database returned invalid JSON.", "table": None}
 
         execution = payload.get("execution") or {}
@@ -241,6 +240,7 @@ class AgentApp(ctk.CTk):
         rows = execution.get("rows", [])
         generated_sql = payload.get("generated_sql") or {}
         selected_dataset = payload.get("selected_dataset") or {}
+        metrics = payload.get("metrics") or {}
 
         table = {"columns": columns, "rows": rows} if columns else None
 
@@ -263,6 +263,21 @@ class AgentApp(ctk.CTk):
             sql_lines.append(f"Mode decision: {generated_sql['mode_decision']}")
         if generated_sql.get("explanation"):
             sql_lines.append(f"Explanation: {generated_sql['explanation']}")
+        if metrics:
+            sql_lines.extend(
+                [
+                    "",
+                    "Metrics:",
+                    f"Status: {metrics.get('status', 'unknown')}",
+                    f"Total time (ms): {metrics.get('timings_ms', {}).get('total', 'n/a')}",
+                    f"Retrieval time (ms): {metrics.get('timings_ms', {}).get('retrieval', 'n/a')}",
+                    f"SQL generation time (ms): {metrics.get('timings_ms', {}).get('sql_generation', 'n/a')}",
+                    "Candidate changed by model: "
+                    f"{metrics.get('retrieval', {}).get('candidate_changed_by_model', False)}",
+                    "Mode changed by model: "
+                    f"{metrics.get('query_mode', {}).get('mode_changed_by_model', False)}",
+                ]
+            )
         if generated_sql.get("sql"):
             sql_lines.extend(["", "SQL:", generated_sql["sql"]])
 
